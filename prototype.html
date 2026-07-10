@@ -206,26 +206,12 @@ var BASE=[
  ['국어 문제집 2장 풀기','학습','매일'],['한국사 책 읽기','학습','매일'],
  ['방 청소·정리하기','생활','매일'],['설거지하기','생활','매일'],['11시 반 잠자기','생활','매일']
 ];
-function seededRand(seed){var s=seed%2147483647;if(s<=0)s+=2147483646;return function(){s=(s*16807)%2147483647;return(s-1)/2147483646}}
+/* 초기 미션 세트(양식/폼) 생성 - 자녀별 기본 16개 */
+function makeBaseMissions(){var missions=[];['juho','jua'].forEach(function(cid){BASE.forEach(function(m,i){missions.push({id:cid+'-m'+(i+1),childId:cid,title:m[0],category:m[1],cycle:m[2],coin:100,order:i,startDate:'2026-07-07',endDate:plusYears('2026-07-07',1)})})});return missions}
+/* 최초 상태: 활동 내역(기록·코인·대화·현금전환)은 모두 비어있는 깨끗한 상태 */
 function buildSeed(){
-  var missions=[];
-  ['juho','jua'].forEach(function(cid){BASE.forEach(function(m,i){missions.push({id:cid+'-m'+(i+1),childId:cid,title:m[0],category:m[1],cycle:m[2],coin:100,order:i,startDate:'2026-07-07',endDate:plusYears('2026-07-07',1)})})});
-  var records={},today=todayKey();
-  var rand={juho:seededRand(20260707),jua:seededRand(19990101)},dil={juho:.72,jua:.85};
-  for(var back=9;back>=1;back--){(function(date){['juho','jua'].forEach(function(cid){
-    missions.filter(function(m){return m.childId===cid}).forEach(function(m){var r=rand[cid]();var st='none';
-      if(r<dil[cid]){var r2=rand[cid]();st=r2<.88?'approved':r2<.95?'checked':'sent'}
-      if(st!=='none')records[cid+'|'+date+'|'+m.id]={status:st}})})})(addDays(today,-back))}
   return{version:3,children:[{id:'juho',name:'주호',theme:'juho'},{id:'jua',name:'주아',theme:'jua'}],
-    missions:missions,records:records,
-    messages:[
-      {id:'msg1',childId:'juho',from:'parent',text:'주호야 어제 미션 다 했네! 정말 대견해 👦 오늘도 화이팅!',ts:Date.now()-72e6},
-      {id:'msg2',childId:'jua',from:'parent',text:'주아 최고! 6일 연속 달성 중이야 🔥 엄마가 응원해!',sticker:'⭐',ts:Date.now()-64e6}
-    ],
-    cashRequests:[
-      {id:'cr-s1',childId:'jua',won:10000,coins:10000,status:'approved',ts:Date.now()-86400000*40},
-      {id:'cr-s2',childId:'juho',won:10000,coins:10000,status:'requested',ts:Date.now()-3600000}
-    ],
+    missions:makeBaseMissions(),records:{},messages:[],cashRequests:[],
     familyRule:'2번 이상 실패 시 → 학교를 열심히 다닌다.',
     rules:{juho:'2회 이상(월간) 실패 시 → 영어(명지)를 다시 한다.',jua:'2회 이상 실패 시 → 학교를 열심히 다닌다.'},
     parentPin:'111',pinChanged:false,lastChild:null};
@@ -290,7 +276,8 @@ function deleteMission(id){S.missions=S.missions.filter(function(m){return m.id!
 function moveMission(id,dir){var t=S.missions.filter(function(m){return m.id===id})[0];if(!t)return;var sib=S.missions.filter(function(m){return m.childId===t.childId}).sort(function(a,b){return a.order-b.order});var i=sib.findIndex(function(m){return m.id===id});var sw=sib[i+dir];if(!sw)return;var a=t.order;t.order=sw.order;sw.order=a;persist()}
 /* #11 드래그로 미션 순서 재배치 */
 function reorderTo(dragId,targetId){var dm=S.missions.filter(function(x){return x.id===dragId})[0];var tm=S.missions.filter(function(x){return x.id===targetId})[0];if(!dm||!tm||dm.childId!==tm.childId||dragId===targetId)return;var ids=S.missions.filter(function(m){return m.childId===dm.childId}).sort(function(a,b){return a.order-b.order}).map(function(m){return m.id});ids.splice(ids.indexOf(dragId),1);ids.splice(ids.indexOf(targetId),0,dragId);ids.forEach(function(id,idx){var m=S.missions.filter(function(x){return x.id===id})[0];if(m)m.order=idx});persist()}
-function resetData(){S=buildSeed();persist()}
+/* 활동 내역만 초기화: 미션·규칙·양식은 유지, 미션체크/코인/대화/현금전환 내역 전부 비움 */
+function resetData(){S.records={};S.messages=[];S.cashRequests=[];persist()}
 
 /* ============ 렌더 헬퍼 ============ */
 var app=document.getElementById('app');
@@ -572,7 +559,7 @@ function scSettings(){
    +['jua','juho'].map(function(id){var c=child(id);return '<div style="margin-bottom:10px"><div style="font-size:12px;font-weight:800;color:var(--ink-soft);margin-bottom:6px;display:flex;align-items:center;gap:6px">'+hero(id,24)+c.name+' 규칙</div><textarea class="inp" id="rule-'+id+'" rows="2" style="resize:none">'+esc(ruleOf(id))+'</textarea></div>'}).join('')
    +'<button class="btn" data-saverules="1">규칙 저장</button><div class="muted" style="font-size:11px;margin-top:8px;text-align:center">저장하면 각 자녀 홈 화면 하단에 표시됩니다</div></div>'
    +'<div class="sect">가족 동기화 · 보안</div><div class="card" id="cloudStat"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:22px">🔒</span><div style="flex:1"><div style="font-weight:800;font-size:14px">'+cloudStatus()+'</div><div class="muted" style="font-size:11px;margin-top:2px">가족 코드로 암호화해 기기 간 실시간 공유</div></div></div><button class="btn ghost" data-openmodal="sync">🔒 가족 동기화 코드 설정</button></div>'
-   +'<div class="sect">데이터</div><div class="card"><button class="btn ghost" data-reset="1">🔄 초기 데이터로 리셋</button><div class="muted" style="font-size:11px;margin-top:8px;text-align:center">기획서 기준 미션 16개와 예시 기록으로 되돌립니다</div></div>'
+   +'<div class="sect">데이터</div><div class="card"><button class="btn ghost" data-reset="1">🔄 활동 내역 초기화</button><div class="muted" style="font-size:11px;margin-top:8px;text-align:center;line-height:1.5">미션 체크·코인·대화·현금전환 내역을 <b>모두 비웁니다</b>.<br>미션 목록·가족 규칙·설정은 그대로 유지돼요.</div></div>'
    +'<div class="sect">계정</div><div class="card"><button class="btn ghost" data-logout="1">로그아웃</button></div>'
    +'<div class="muted" style="font-size:11px;text-align:center;margin:18px 0">우리가족 미션 챌린지 · 프로토타입 v2.0<br>👦 주호 · 👧 주아 — 오늘도 미션 화이팅!</div>'
    +'</div></div>'+parentNav('juho','settings')+'</div>'}
@@ -710,7 +697,7 @@ document.addEventListener('click',function(e){
   if(ds.sheetclose){editing=null;render();return}
   if(ds.submit){var ti=document.getElementById('fTitle').value.trim();if(!ti){toast('미션 제목을 입력해주세요');return}form.title=ti;form.startDate=document.getElementById('fStart').value;form.endDate=document.getElementById('fEnd').value;var mcid=route().split('/')[2];var payload={title:form.title,category:form.category,cycle:form.cycle,coin:form.coin,startDate:form.startDate,endDate:form.endDate};if(editing==='new'){addMission({childId:mcid,title:payload.title,category:payload.category,cycle:payload.cycle,coin:payload.coin,startDate:payload.startDate,endDate:payload.endDate});toast('미션을 추가했어요')}else{updateMission(editing,payload);toast('미션을 수정했어요')}editing=null;render();return}
   if(ds.saverules){var rj=(document.getElementById('rule-jua')||{}).value;var rh=(document.getElementById('rule-juho')||{}).value;S.rules=S.rules||{};if(rj!==undefined)S.rules.jua=rj.trim();if(rh!==undefined)S.rules.juho=rh.trim();persist();toast('가족 규칙을 저장했어요');render();return}
-  if(ds.reset){if(confirm('모든 기록을 초기 상태로 되돌릴까요?')){resetData();toast('초기 데이터로 리셋했어요');go('/parent/select')}render();return}
+  if(ds.reset){if(confirm('미션 체크·코인·대화·현금전환 내역을 모두 비울까요?\n(미션 목록·규칙·설정은 유지됩니다)')){resetData();toast('활동 내역을 초기화했어요');go('/parent/select')}render();return}
   if(ds.sticker){var scid=route().split('/')[2];var sfrom=route().indexOf('/parent')===0?'parent':'child';sendMessage(scid,sfrom,undefined,ds.sticker);render();return}
 });
 function syncForm(){if(!form)return;var t=document.getElementById('fTitle');if(t)form.title=t.value;var s=document.getElementById('fStart');if(s&&s.value)form.startDate=s.value;var e=document.getElementById('fEnd');if(e&&e.value)form.endDate=e.value}
