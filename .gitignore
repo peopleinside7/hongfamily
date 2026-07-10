@@ -7,3 +7,6 @@ dist-ssr
 *.tsbuildinfo
 Thumbs.db
 *.log
+
+# CI workflows (need workflow-scope token to push)
+.github/

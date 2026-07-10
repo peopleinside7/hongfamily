@@ -326,7 +326,8 @@ function parentNav(cid,active){var pend=totalPending(todayKey());var items=[['da
 /* ============ 자녀 화면 ============ */
 function scChildSelect(){
   return '<div class="screen"><div class="body">'
-   +'<div style="padding:26px 18px 8px;text-align:center"><div style="font-family:var(--ft);font-weight:700;font-size:26px;letter-spacing:-0.5px;color:var(--primary-deep)">우리가족 미션 챌린지</div>'
+   +'<div style="display:flex;justify-content:flex-end;padding:8px 12px 0"><button class="iconbtn" data-openmodal="sync" title="가족 동기화">🔒</button></div>'
+   +'<div style="padding:8px 18px 8px;text-align:center"><div style="font-family:var(--ft);font-weight:700;font-size:26px;letter-spacing:-0.5px;color:var(--primary-deep)">우리가족 미션 챌린지</div>'
    +'<div style="color:#5a6180;font-weight:700;margin-top:4px;font-size:13px">주호 · 주아의 하루 미션</div></div>'
    +'<div class="pad"><div style="font-family:var(--ft);font-size:17px;margin:6px 4px 14px">누구의 미션을 열어볼까요?</div>'
    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">'
@@ -560,7 +561,7 @@ function scSettings(){
    +'<div class="sect">자녀 대표 캐릭터</div>'
    +S.children.map(function(c){return '<div class="card" style="margin-bottom:12px;display:flex;align-items:center;gap:14px">'+hero(c.id,56)+'<div><div style="font-family:var(--ft);font-size:17px">'+c.name+'</div><div class="muted" style="font-size:12px;margin-top:2px">'+(c.theme==='juho'?'과학소년 · 블루':'노래하는 · 라벤더')+' 테마</div></div></div>'}).join('')
    +'<div class="sect">가족 규칙</div><div class="card" style="background:#fff3cd;color:#8a6d1a;font-weight:800;font-size:14px">⚠️ '+esc(S.familyRule)+'</div>'
-   +'<div class="sect">클라우드 동기화</div><div class="card" id="cloudStat"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:22px">☁️</span><div style="flex:1"><div style="font-weight:800;font-size:14px">Supabase 동기화 · '+cloudStatus()+'</div><div class="muted" style="font-size:11px;margin-top:2px">기기·부모/자녀 간 실시간 공유 (http/https 접속 시)</div></div></div></div>'
+   +'<div class="sect">가족 동기화 · 보안</div><div class="card" id="cloudStat"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:22px">🔒</span><div style="flex:1"><div style="font-weight:800;font-size:14px">'+cloudStatus()+'</div><div class="muted" style="font-size:11px;margin-top:2px">가족 코드로 암호화해 기기 간 실시간 공유</div></div></div><button class="btn ghost" data-openmodal="sync">🔒 가족 동기화 코드 설정</button></div>'
    +'<div class="sect">데이터</div><div class="card"><button class="btn ghost" data-reset="1">🔄 초기 데이터로 리셋</button><div class="muted" style="font-size:11px;margin-top:8px;text-align:center">기획서 기준 미션 16개와 예시 기록으로 되돌립니다</div></div>'
    +'<div class="sect">계정</div><div class="card"><button class="btn ghost" data-logout="1">로그아웃</button></div>'
    +'<div class="muted" style="font-size:11px;text-align:center;margin:18px 0">우리가족 미션 챌린지 · 프로토타입 v2.0<br>👦 주호 · 👧 주아 — 오늘도 미션 화이팅!</div>'
@@ -625,7 +626,15 @@ function notiSheet(cid){var items=notiItems(cid);
    +(items.length?items.map(function(n){var act=n.to?('data-go="'+n.to+'"'):('data-openmodal="'+n.open+'"');return '<button class="card" '+act+' style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin-bottom:10px"><span style="font-size:24px">'+n.i+'</span><div style="flex:1;font-weight:700;font-size:14px">'+esc(n.t)+'</div><span style="color:var(--ink-soft);font-size:20px">›</span></button>'}).join(''):'<div class="muted" style="text-align:center;padding:24px 8px">새 알림이 없어요 🎉</div>')
    +'<button class="btn ghost" data-closemodal="1" style="margin-top:8px">닫기 ✕</button></div></div>'}
 function bellBtn(cid){var n=notiCount(cid);return '<button class="iconbtn" data-openmodal="noti" style="margin-left:6px;width:34px;height:34px;font-size:16px">🔔'+(n?'<span class="dot" style="position:absolute;top:-5px;right:-5px;transform:scale(.72)">'+n+'</span>':'')+'</button>'}
-function renderOverlay(){var ov=document.getElementById('overlay');if(!ov)return;if(!modal){ov.innerHTML='';return}ov.innerHTML=(modal.type==='coin')?coinSheet(modal.cid):(modal.type==='cash')?cashSheet(modal.cid):notiSheet(modal.cid)}
+function syncSheet(){var code=familyCode();
+  return '<div class="sheet-bg" id="modalbg"><div class="sheet slideup">'
+   +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="font-size:22px">🔒</span><div style="font-family:var(--ft);font-weight:700;font-size:19px">가족 동기화 · 보안</div><div class="sp"></div><button class="iconbtn" data-closemodal="1">✕</button></div>'
+   +'<div class="card" style="background:linear-gradient(135deg,#fff,#fff0e8);margin-bottom:14px;font-size:12.5px;line-height:1.6;color:var(--ink-soft)">가족만 아는 <b style="color:var(--ink)">비밀 코드</b>를 정하고, 가족 각자의 폰에 <b style="color:var(--ink)">똑같이</b> 입력하세요.<br>같은 코드끼리만 실시간으로 연결되고, 데이터는 이 코드로 <b style="color:var(--ink)">암호화</b>되어 저장돼요. (코드를 모르면 아무도 열람 불가)</div>'
+   +'<label style="font-size:12px;font-weight:800;color:var(--ink-soft)">가족 비밀 코드<input class="inp" id="famCode" value="'+esc(code)+'" placeholder="예: hong-0605-비밀" style="margin-top:6px" autocomplete="off"></label>'
+   +'<div class="muted" style="font-size:11px;margin:8px 2px 0">현재 상태: '+cloudStatus()+'</div>'
+   +'<div style="display:flex;gap:10px;margin-top:16px">'+(code?'<button class="btn ghost" style="flex:1" data-synccode="__clear__">동기화 끄기</button>':'')+'<button class="btn" style="flex:1" data-synccode="save">저장하고 연결</button></div>'
+   +'<button class="btn ghost" data-closemodal="1" style="margin-top:10px">닫기 ✕</button><div style="height:8px"></div></div></div>'}
+function renderOverlay(){var ov=document.getElementById('overlay');if(!ov)return;if(!modal){ov.innerHTML='';return}ov.innerHTML=(modal.type==='coin')?coinSheet(modal.cid):(modal.type==='cash')?cashSheet(modal.cid):(modal.type==='sync')?syncSheet():notiSheet(modal.cid)}
 
 /* ============ 렌더러 ============ */
 var lastRenderRoute=null;
@@ -654,13 +663,14 @@ function renderRoleToggle(){var rt=document.getElementById('roleToggle');var isP
 /* ============ 이벤트 ============ */
 document.addEventListener('click',function(e){
   if(e.target.classList&&e.target.classList.contains('sheet-bg')&&e.target.id==='modalbg'){closeModal();return}
-  var sel='[data-go],[data-pick],[data-check],[data-send],[data-role],[data-login],[data-logout],[data-cal],[data-day],[data-range],[data-adate],[data-approve],[data-reject],[data-approveall],[data-cmt],[data-new],[data-edit],[data-del],[data-move],[data-reset],[data-sheetclose],[data-submit],[data-fcat],[data-fcycle],[data-sticker],[data-openmodal],[data-closemodal],[data-unit],[data-cashreq],[data-cashapprove],[data-attweek],[data-coinstep],[data-attday],[data-pinlogin],[data-pinsave]';
+  var sel='[data-go],[data-pick],[data-check],[data-send],[data-role],[data-login],[data-logout],[data-cal],[data-day],[data-range],[data-adate],[data-approve],[data-reject],[data-approveall],[data-cmt],[data-new],[data-edit],[data-del],[data-move],[data-reset],[data-sheetclose],[data-submit],[data-fcat],[data-fcycle],[data-sticker],[data-openmodal],[data-closemodal],[data-unit],[data-cashreq],[data-cashapprove],[data-attweek],[data-coinstep],[data-attday],[data-pinlogin],[data-pinsave],[data-synccode]';
   var t=e.target.closest(sel);if(!t)return;var ds=t.dataset;
   if(ds.openmodal){openModal(ds.openmodal, route().split('/')[2]);return}
   if(ds.closemodal){closeModal();return}
   if(ds.unit){if(modal){modal.units=Math.max(1,(modal.units||1)+Number(ds.unit));renderOverlay()}return}
   if(ds.cashreq){var uu=modal?modal.units:1;addCashRequest(ds.cashreq,uu*CASH_UNIT);closeModal();toast(uu+'만원 현금전환을 부모님께 요청했어요 💸');render();return}
   if(ds.cashapprove){approveCashRequest(ds.cashapprove);sparkle();toast('현금전환을 승인했어요. 캐쉬에서 차감됩니다 💰');renderOverlay();render();return}
+  if(ds.synccode){if(ds.synccode==='__clear__'){setFamilyCode('');toast('가족 동기화를 껐어요 (이 기기는 로컬 저장)');closeModal();render();return}var fc=(document.getElementById('famCode')||{}).value||'';fc=fc.trim();if(fc.length<4){toast('4자 이상으로 정해주세요');return}setFamilyCode(fc);toast('가족 코드를 저장했어요 🔒 같은 코드를 다른 기기에도 입력하세요');closeModal();render();return}
   if(ds.go){modal=null;renderOverlay();go(ds.go);return}
   if(ds.pick){modal=null;renderOverlay();attWeekOffset=0;S.lastChild=ds.pick;persist();go('/child/'+ds.pick+'/home');return}
   if(ds.role){modal=null;renderOverlay();if(ds.role==='child')go(S.lastChild?'/child/'+S.lastChild+'/home':'/child');else go('/parent');return}
@@ -711,13 +721,25 @@ document.addEventListener('drop',function(e){var row=e.target.closest('[data-dra
 
 window.addEventListener('hashchange',render);
 if(!location.hash)location.hash='/child';
-/* #7 Supabase 클라우드 동기화 (공개키만 사용 / 방어적 - 실패해도 로컬로 동작) */
-var CLOUD={url:'https://qhulwtunogbpzlbhtvcp.supabase.co',key:'sb_publishable_OliwNHYmloBjvSfZTTPg3A_rsRQ8Z9k',rowId:'hong-family',client:null,ready:false,applying:false,pushT:null};
-function cloudStatus(){return CLOUD.ready?'연결됨':(CLOUD.client?'연결 중…':'오프라인(로컬 저장)')}
-function scheduleCloudPush(now){if(!CLOUD.client||CLOUD.applying)return;clearTimeout(CLOUD.pushT);CLOUD.pushT=setTimeout(function(){try{CLOUD.client.from('app_state').upsert({id:CLOUD.rowId,data:S,updated_at:new Date().toISOString()}).then(function(res){if(res&&res.error)console.warn('[cloud push]',res.error.message)})}catch(e){console.warn('[cloud push]',e)}},now?120:800)}
+/* #7 Supabase 동기화 + 가족 코드 종단간 암호화(E2E)
+   - 데이터는 '가족 코드'로 암호화되어 저장 → 코드를 모르면 아무도 해독/열람 불가
+   - 코드는 각 기기에만 저장(코드 자체는 서버/코드에 저장 안 됨)
+   - 코드 미설정/미지원 환경이면 클라우드 끄고 로컬로만 동작 */
+var CLOUD={url:'https://qhulwtunogbpzlbhtvcp.supabase.co',key:'sb_publishable_OliwNHYmloBjvSfZTTPg3A_rsRQ8Z9k',rowId:null,client:null,key2:null,ready:false,applying:false,pushT:null};
+var CRYPTO_OK=!!(window.crypto&&window.crypto.subtle);
+function familyCode(){try{return localStorage.getItem('hfm_family_code')||''}catch(e){return ''}}
+function cloudStatus(){if(!CRYPTO_OK)return '이 환경 미지원(로컬 저장)';if(!familyCode())return '미설정 — 가족 코드를 입력하세요';return CLOUD.ready?'연결됨 🔒 (암호화 동기화)':'연결 중…'}
+function _b64(u8){var s='';for(var i=0;i<u8.length;i+=0x8000){s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000))}return btoa(s)}
+function _unb64(b){return Uint8Array.from(atob(b),function(c){return c.charCodeAt(0)})}
+function deriveKey(pass){var enc=new TextEncoder();return crypto.subtle.importKey('raw',enc.encode(pass),'PBKDF2',false,['deriveKey']).then(function(base){return crypto.subtle.deriveKey({name:'PBKDF2',salt:enc.encode('hfm-family-salt-v1'),iterations:100000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt'])})}
+function sha256hex(s){return crypto.subtle.digest('SHA-256',new TextEncoder().encode(s)).then(function(buf){return Array.prototype.map.call(new Uint8Array(buf),function(b){return('0'+b.toString(16)).slice(-2)}).join('')})}
+function encJSON(key,obj){var iv=crypto.getRandomValues(new Uint8Array(12));return crypto.subtle.encrypt({name:'AES-GCM',iv:iv},key,new TextEncoder().encode(JSON.stringify(obj))).then(function(ct){var c=new Uint8Array(ct);var out=new Uint8Array(iv.length+c.length);out.set(iv,0);out.set(c,iv.length);return _b64(out)})}
+function decJSON(key,b64){var raw=_unb64(b64);var iv=raw.slice(0,12);var ct=raw.slice(12);return crypto.subtle.decrypt({name:'AES-GCM',iv:iv},key,ct).then(function(pt){return JSON.parse(new TextDecoder().decode(pt))})}
 function cloudApply(data){if(!data)return;CLOUD.applying=true;S=data;persistLocalOnly();render();renderOverlay();CLOUD.applying=false}
-function cloudPull(){if(!CLOUD.client)return;try{CLOUD.client.from('app_state').select('data').eq('id',CLOUD.rowId).maybeSingle().then(function(res){if(res&&res.error){console.warn('[cloud pull]',res.error.message);return}var row=res&&res.data;if(row&&row.data){CLOUD.ready=true;cloudApply(row.data);render()}else{scheduleCloudPush(true)}})}catch(e){console.warn('[cloud pull]',e)}}
-function cloudInit(){if(CLOUD.client||!window.supabase||!CLOUD.url||!CLOUD.key)return;try{CLOUD.client=window.supabase.createClient(CLOUD.url,CLOUD.key);cloudPull();CLOUD.client.channel('hfm-app-state').on('postgres_changes',{event:'*',schema:'public',table:'app_state',filter:'id=eq.'+CLOUD.rowId},function(payload){if(CLOUD.applying)return;var d=payload&&payload.new&&payload.new.data;if(d)cloudApply(d)}).subscribe(function(st){if(st==='SUBSCRIBED')CLOUD.ready=true;if(document.querySelector('#cloudStat'))render()})}catch(e){console.warn('[cloud init]',e)}}
+function scheduleCloudPush(now){if(!CLOUD.client||!CLOUD.key2||CLOUD.applying)return;clearTimeout(CLOUD.pushT);CLOUD.pushT=setTimeout(function(){encJSON(CLOUD.key2,S).then(function(enc){return CLOUD.client.from('app_state').upsert({id:CLOUD.rowId,data:{enc:enc},updated_at:new Date().toISOString()})}).then(function(res){if(res&&res.error)console.warn('[cloud push]',res.error.message)}).catch(function(e){console.warn('[cloud push]',e)})},now?150:900)}
+function cloudPull(){if(!CLOUD.client||!CLOUD.key2)return Promise.resolve();return CLOUD.client.from('app_state').select('data').eq('id',CLOUD.rowId).maybeSingle().then(function(res){if(res&&res.error){console.warn('[cloud pull]',res.error.message);return}var row=res&&res.data;if(row&&row.data&&row.data.enc){return decJSON(CLOUD.key2,row.data.enc).then(function(obj){CLOUD.ready=true;cloudApply(obj)}).catch(function(){console.warn('[cloud] 복호화 실패 - 가족 코드가 다릅니다')})}else{scheduleCloudPush(true)}}).catch(function(e){console.warn('[cloud pull]',e)})}
+function cloudInit(){var code=familyCode();if(CLOUD.client||!window.supabase||!CRYPTO_OK||!code)return;try{Promise.all([deriveKey(code),sha256hex(code)]).then(function(r){CLOUD.key2=r[0];CLOUD.rowId='fam_'+r[1].slice(0,40);CLOUD.client=window.supabase.createClient(CLOUD.url,CLOUD.key);return cloudPull().then(function(){CLOUD.client.channel('hfm-'+CLOUD.rowId).on('postgres_changes',{event:'*',schema:'public',table:'app_state',filter:'id=eq.'+CLOUD.rowId},function(p){if(CLOUD.applying)return;var e=p&&p.new&&p.new.data&&p.new.data.enc;if(e)decJSON(CLOUD.key2,e).then(cloudApply).catch(function(){})}).subscribe(function(st){if(st==='SUBSCRIBED'){CLOUD.ready=true;if(document.getElementById('cloudStat'))render()}})})}).catch(function(e){console.warn('[cloud init]',e)})}catch(e){console.warn('[cloud init]',e)}}
+function setFamilyCode(code){try{if(code)localStorage.setItem('hfm_family_code',code);else localStorage.removeItem('hfm_family_code')}catch(e){}CLOUD.client=null;CLOUD.ready=false;CLOUD.key2=null;CLOUD.rowId=null;if(code)cloudInit()}
 window.addEventListener('load',cloudInit);
 
 render();renderOverlay();
