@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#ff7a59" />
+<meta name="description" content="주호·주아의 하루 미션 - 매일 미션을 체크하고 부모와 소통하는 가족 미션 앱" />
+<link rel="manifest" href="manifest.webmanifest" />
+<script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link rel="apple-touch-icon" href="navicons/appicon-192.png" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="가족미션" />
+<title>우리가족 미션 챌린지 · 주호·주아의 하루 미션</title>
+<style>
+/* ===== 로컬 폰트 (font/ 폴더) ===== */
+@font-face{font-family:'Gmarket';src:url('font/GmarketSansTTFMedium.ttf') format('truetype');font-weight:500;font-display:swap}
+@font-face{font-family:'Gmarket';src:url('font/GmarketSansTTFBold.ttf') format('truetype');font-weight:700;font-display:swap}
+@font-face{font-family:'Paperlogy';src:url('font/Paperlogy-8ExtraBold.ttf') format('truetype');font-weight:800;font-display:swap}
+@font-face{font-family:'PretendardL';src:url('font/Pretendard-Medium.otf') format('opentype');font-weight:500;font-display:swap}
+@font-face{font-family:'PretendardL';src:url('font/Pretendard-Bold.otf') format('opentype');font-weight:700;font-display:swap}
+@font-face{font-family:'NanumSquareL';src:url('font/NanumSquareR.otf') format('opentype');font-weight:400;font-display:swap}
+@font-face{font-family:'NanumSquareL';src:url('font/NanumSquareB.otf') format('opentype');font-weight:700;font-display:swap}
+:root{
+  --primary:#ff7a59;--primary-2:#ff9478;--primary-deep:#e85c3d;
+  --hero1:#ffb391;--hero2:#ff7a59;
+  --bg:#fff7ef;--card:#fff;--ink:#3e2a20;--ink-soft:#a08a7a;--line:#f1e6d8;
+  --coin:#ffb84d;--coin-deep:#e8963a;--ok:#2fb37a;--danger:#ff5a5a;
+  --juho:#4e86c6;--jua:#8e7cd1;
+  --faith:#b08a1e;--faith-bg:#fff3d1;--read:#3e8a57;--read-bg:#e6f4ea;
+  --study:#3d6fa8;--study-bg:#e3f0fa;--life:#6f5bb5;--life-bg:#f1edfa;
+  --radius:22px;--shadow:0 6px 20px rgba(160,90,60,.12);--shadow-sm:0 3px 12px rgba(160,90,60,.10);
+  --ft:'Gmarket','Malgun Gothic',system-ui,sans-serif;      /* 메인 타이틀 */
+  --ft2:'Paperlogy','Malgun Gothic',system-ui,sans-serif;   /* 그다음 타이틀 */
+  --fb:'PretendardL','Malgun Gothic',system-ui,sans-serif;  /* 본문 (Bold/Medium) */
+  --fe:'NanumSquareL','Malgun Gothic',system-ui,sans-serif; /* 그외 */
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;font-family:var(--fb);font-weight:500;color:var(--ink)}
+body{background:linear-gradient(160deg,#ffe3cf,#ffccb0 60%,#ffb59a);min-height:100vh}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input,textarea,select{font-family:inherit}
+img{max-width:100%}
+.stage{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:22px 10px}
+.phone{width:390px;max-width:100%;height:844px;max-height:calc(100vh - 90px);background:var(--bg);border-radius:46px;border:12px solid #171a2b;box-shadow:0 30px 70px rgba(0,0,0,.35);overflow:hidden;position:relative;display:flex;flex-direction:column}
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:150px;height:26px;background:#171a2b;border-radius:0 0 18px 18px;z-index:60}
+.screen-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column;position:relative;padding-top:36px}
+@media(max-width:480px){
+  body{background:var(--bg)}.stage{padding:0;gap:0}
+  .phone{width:100%;height:100vh;height:100dvh;max-height:none;border:none;border-radius:0;box-shadow:none}
+  .notch,.role-toggle{display:none!important}
+  .screen-wrap{padding-top:env(safe-area-inset-top)}
+}
+#app{flex:1;min-height:0;display:flex;flex-direction:column}
+.screen{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+.body{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden}
+.body::-webkit-scrollbar{width:0}
+.pad{padding:16px}
+.appbar{display:flex;align-items:center;gap:10px;padding:14px 16px 10px}
+.appbar .name{font-family:var(--ft);font-weight:700;font-size:18px;letter-spacing:-0.3px;color:var(--ink);white-space:nowrap;flex:0 0 auto}
+.sp{flex:1}
+.coinpill{display:inline-flex;align-items:center;gap:5px;background:#fff;border-radius:999px;padding:6px 12px;font-family:var(--fe);font-weight:700;font-size:13px;box-shadow:var(--shadow-sm);color:var(--coin-deep)}
+.iconbtn{width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:18px;background:#fff;box-shadow:var(--shadow-sm);color:var(--ink);position:relative}
+.iconbtn.plain{background:transparent;box-shadow:none}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow-sm);padding:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-family:var(--fe);font-weight:700;font-size:17px;padding:15px 20px;border-radius:16px;background:linear-gradient(180deg,var(--primary-2),var(--primary));color:#fff;box-shadow:0 5px 0 var(--primary-deep);width:100%;transition:transform .06s,box-shadow .06s}
+.btn:active{transform:translateY(3px);box-shadow:0 2px 0 var(--primary-deep)}
+.btn.coin{background:linear-gradient(180deg,#ffce5e,#f5b93e);box-shadow:0 5px 0 var(--coin-deep);color:#7a5210}
+.btn.ghost{background:#fff;color:var(--primary);box-shadow:0 0 0 2px #f0e5d6 inset}
+.btn.sm{font-size:14px;padding:9px 14px;border-radius:12px;width:auto;box-shadow:0 3px 0 var(--primary-deep)}
+.btn.sm:active{box-shadow:0 1px 0 var(--primary-deep)}
+.btn:disabled{opacity:.5;box-shadow:none;cursor:not-allowed;filter:grayscale(.3)}
+.chip{display:inline-flex;align-items:center;gap:5px;font-family:var(--fe);font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;background:#f6ece0;color:var(--ink-soft)}
+.dot{min-width:19px;height:19px;padding:0 6px;border-radius:999px;background:var(--danger);color:#fff;font-family:var(--fe);font-size:11px;font-weight:700;display:inline-grid;place-items:center}
+.sect{font-family:var(--ft2);font-weight:800;font-size:16px;color:var(--ink);margin:20px 4px 10px;display:flex;align-items:center;gap:8px}
+.sect .more{margin-left:auto;font-family:var(--fb);font-size:12px;font-weight:700;color:var(--ink-soft)}
+.muted{color:var(--ink-soft)}
+.inp{width:100%;border:1.5px solid #e8dcc9;border-radius:12px;padding:11px 13px;font-size:14px;outline:none;background:#fffdf8}
+.inp:focus{border-color:var(--primary-2)}
+/* 캐릭터 */
+.charcircle{border-radius:16px;overflow:hidden;background:#eef1fb;flex:0 0 auto;display:block}
+.herosvg{display:block}
+/* 상태 원 */
+.stcircle{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:19px;flex:0 0 auto;font-weight:800}
+/* 하단 탭 */
+.bottomnav{display:flex;background:#fff;border-top:1px solid #f1e6d8;padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+.bottomnav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;color:var(--ink-soft);font-family:var(--fe);font-size:11px;font-weight:700}
+.bottomnav button.active{color:var(--primary)}
+.bottomnav .ico{font-size:20px;position:relative;line-height:0}
+.navimg{width:27px;height:27px;display:block;object-fit:contain;opacity:.5;transition:opacity .15s,transform .15s}
+.bottomnav button.active .navimg{opacity:1;transform:scale(1.08)}
+.toggleimg{width:20px;height:20px;border-radius:50%;object-fit:cover;display:inline-block;vertical-align:middle;margin-right:5px}
+/* 역할 토글 */
+.role-toggle{display:inline-flex;background:rgba(255,255,255,.65);border-radius:999px;padding:5px;gap:4px;backdrop-filter:blur(4px)}
+.role-toggle button{font-family:var(--fe);font-weight:700;font-size:14px;padding:8px 18px;border-radius:999px;color:var(--primary-deep)}
+.role-toggle button.active{background:var(--primary);color:#fff}
+/* 진행 게이지 바 */
+.pbar{height:12px;background:#f0e5d6;border-radius:999px;overflow:hidden}
+.pbar>i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--primary-2),var(--primary));transition:width .5s}
+@keyframes pop{0%{transform:scale(.6);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
+@keyframes slideup{from{transform:translateY(16px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes stickerpop{0%{transform:translate(-50%,-50%) scale(.2) rotate(-15deg);opacity:0}30%{opacity:1;transform:translate(-50%,-50%) scale(1.25) rotate(8deg)}70%{transform:translate(-50%,-50%) scale(1) rotate(-3deg);opacity:1}100%{transform:translate(-50%,-72%) scale(1) rotate(0);opacity:0}}
+.stickerburst{position:absolute;left:50%;top:46%;font-size:104px;z-index:96;pointer-events:none;filter:drop-shadow(0 8px 14px rgba(0,0,0,.18));animation:stickerpop 1.15s ease forwards}
+@media (prefers-reduced-motion: reduce){*{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+.pop{animation:pop .3s ease both}.slideup{animation:slideup .25s ease both}.floaty{animation:floaty 3.4s ease-in-out infinite}
+.toast-wrap{position:absolute;left:0;right:0;bottom:86px;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;z-index:80}
+.toast{background:#2b2f45;color:#fff;padding:12px 18px;border-radius:14px;font-weight:700;font-size:14px;box-shadow:var(--shadow);animation:slideup .25s ease both;max-width:86%;text-align:center}
+#fx{position:absolute;inset:0;pointer-events:none;z-index:90}
+.sheet-bg{position:absolute;inset:0;background:rgba(30,34,60,.4);z-index:95;display:flex;align-items:flex-end}
+.sheet{background:#fff;width:100%;border-radius:24px 24px 0 0;padding:18px;max-height:88%;overflow-y:auto}
+.locked{filter:grayscale(1) opacity(.45)}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="role-toggle" id="roleToggle"></div>
+  <div class="phone">
+    <div class="notch"></div>
+    <div class="screen-wrap">
+      <div id="app"></div>
+      <div class="toast-wrap" id="toasts"></div>
+      <canvas id="fx"></canvas>
+      <div id="overlay"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* 자동 생성 파일 - scripts/build_char_sprite.py 로 재생성 */
+(function(){
+  var SPRITE = "<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"0\" height=\"0\" style=\"position:absolute\" aria-hidden=\"true\"><defs><linearGradient id=\"gDawn\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#B7B0E8\"/><stop offset=\"1\" stop-color=\"#D6D1F4\"/></linearGradient>\n    <linearGradient id=\"gNight\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#A9A2E0\"/><stop offset=\"1\" stop-color=\"#C6BFEE\"/></linearGradient>\n    <linearGradient id=\"gCream\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#FFF8E6\"/><stop offset=\"1\" stop-color=\"#FCEBC2\"/></linearGradient>\n    <linearGradient id=\"gMint\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#E7F7EE\"/><stop offset=\"1\" stop-color=\"#CBEDDA\"/></linearGradient>\n    <linearGradient id=\"gAqua\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#E6F6F3\"/><stop offset=\"1\" stop-color=\"#C8EAE4\"/></linearGradient>\n    <linearGradient id=\"gLav\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#F4F0FC\"/><stop offset=\"1\" stop-color=\"#E0D8F5\"/></linearGradient>\n    <linearGradient id=\"gBlue\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#ECF4FB\"/><stop offset=\"1\" stop-color=\"#D4E5F5\"/></linearGradient>\n    <linearGradient id=\"gSunny\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#FFF6D8\"/><stop offset=\"1\" stop-color=\"#FFE7A8\"/></linearGradient>\n    <linearGradient id=\"gHood\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#A9D3F0\"/><stop offset=\"1\" stop-color=\"#84B3DE\"/></linearGradient>\n    <linearGradient id=\"gCard\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#D6C9F2\"/><stop offset=\"1\" stop-color=\"#B4A0E2\"/></linearGradient>\n    <linearGradient id=\"gGreen\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#A8D4B4\"/><stop offset=\"1\" stop-color=\"#84BC95\"/></linearGradient>\n    <linearGradient id=\"gApron\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#FFE9A8\"/><stop offset=\"1\" stop-color=\"#FFD05C\"/></linearGradient>\n    <linearGradient id=\"gHairB\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#9A7048\"/><stop offset=\"1\" stop-color=\"#7C5636\"/></linearGradient>\n    <linearGradient id=\"gHairG\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#8C6142\"/><stop offset=\"1\" stop-color=\"#6B452C\"/></linearGradient>\n    <linearGradient id=\"gGold\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\"><stop offset=\"0\" stop-color=\"#FFE08A\"/><stop offset=\"1\" stop-color=\"#F5B93E\"/></linearGradient></defs><symbol id=\"ch-juho-hero\" viewBox=\"0 0 200 200\"><circle cx=\"100\" cy=\"100\" r=\"88\" fill=\"url(#gBlue)\"/>\n      <path d=\"M154 46 L157 53 L164 54 L159 59 L160 66 L154 62 L148 66 L149 59 L144 54 L151 53 Z\" fill=\"#FFD65C\"/>\n      <circle cx=\"44\" cy=\"60\" r=\"4\" fill=\"#8ED1C9\"/>\n      <ellipse cx=\"100\" cy=\"176\" rx=\"44\" ry=\"8\" fill=\"#4A3B2E\" opacity=\"0.08\"/>\n      <!-- 몸통(먼저) -->\n      <path d=\"M62 174 Q64 112 100 110 Q136 112 138 174 Z\" fill=\"url(#gHood)\"/>\n      <path d=\"M84 116 L100 132 L116 116 Q108 110 100 110 Q92 110 84 116 Z\" fill=\"#6E9CCB\"/>\n      <line x1=\"93\" y1=\"130\" x2=\"93\" y2=\"144\" stroke=\"#FFF\" stroke-width=\"3\" stroke-linecap=\"round\"/>\n      <line x1=\"107\" y1=\"130\" x2=\"107\" y2=\"144\" stroke=\"#FFF\" stroke-width=\"3\" stroke-linecap=\"round\"/>\n      <circle cx=\"93\" cy=\"147\" r=\"2.5\" fill=\"#FFD65C\"/>\n      <circle cx=\"107\" cy=\"147\" r=\"2.5\" fill=\"#FFD65C\"/>\n      <circle cx=\"100\" cy=\"158\" r=\"7.5\" fill=\"#fff\"/>\n      <circle cx=\"100\" cy=\"158\" r=\"3\" fill=\"#4E86C6\"/>\n      <ellipse cx=\"100\" cy=\"158\" rx=\"12\" ry=\"4.5\" fill=\"none\" stroke=\"#4E86C6\" stroke-width=\"2\" transform=\"rotate(-24 100 158)\"/>\n      <!-- 머리(몸 위에 겹침) -->\n      <circle cx=\"100\" cy=\"80\" r=\"40\" fill=\"url(#gHairB)\"/>\n      <circle cx=\"100\" cy=\"88\" r=\"33\" fill=\"#FDEDDD\"/>\n      <path d=\"M67 80 Q70 54 100 52 Q130 54 133 80 L124 86 Q122 68 112 64 L114 82 L102 66 L92 84 L88 64 Q76 70 76 86 Z\" fill=\"url(#gHairB)\"/>\n      <path d=\"M76 62 Q88 54 102 54\" stroke=\"#B98E60\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.7\"/>\n      <path d=\"M76 78 Q81 74 86 78\" stroke=\"#7C5636\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n      <path d=\"M114 78 Q119 74 124 78\" stroke=\"#7C5636\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n      <circle cx=\"86\" cy=\"90\" r=\"11\" fill=\"none\" stroke=\"#6B5233\" stroke-width=\"3.5\"/>\n      <circle cx=\"114\" cy=\"90\" r=\"11\" fill=\"none\" stroke=\"#6B5233\" stroke-width=\"3.5\"/>\n      <line x1=\"97\" y1=\"89\" x2=\"103\" y2=\"89\" stroke=\"#6B5233\" stroke-width=\"3.5\"/>\n      <circle cx=\"75\" cy=\"90\" r=\"1.8\" fill=\"#D9A94F\"/>\n      <circle cx=\"125\" cy=\"90\" r=\"1.8\" fill=\"#D9A94F\"/>\n      <circle cx=\"86\" cy=\"91\" r=\"4.5\" fill=\"#4A3B2E\"/>\n      <circle cx=\"114\" cy=\"91\" r=\"4.5\" fill=\"#4A3B2E\"/>\n      <circle cx=\"84.5\" cy=\"89.5\" r=\"1.7\" fill=\"#fff\"/>\n      <circle cx=\"112.5\" cy=\"89.5\" r=\"1.7\" fill=\"#fff\"/>\n      <ellipse cx=\"73\" cy=\"102\" rx=\"6\" ry=\"4\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n      <ellipse cx=\"127\" cy=\"102\" rx=\"6\" ry=\"4\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n      <path d=\"M92 105 Q100 114 108 105 Q100 109 92 105 Z\" fill=\"#E8836B\"/>\n      <path d=\"M64 106 L66 110 L70 110 L67 113 L68 117 L64 115 L60 117 L61 113 L58 110 L62 110 Z\" fill=\"#FFD65C\" opacity=\"0.9\"/></symbol><symbol id=\"ch-jua-hero\" viewBox=\"0 0 200 200\"><circle cx=\"100\" cy=\"100\" r=\"88\" fill=\"url(#gLav)\"/>\n      <path d=\"M46 48 L49 55 L56 56 L51 61 L52 68 L46 64 L40 68 L41 61 L36 56 L43 55 Z\" fill=\"#FFD65C\"/>\n      <circle cx=\"156\" cy=\"62\" r=\"4\" fill=\"#8ED1C9\"/>\n      <ellipse cx=\"100\" cy=\"176\" rx=\"44\" ry=\"8\" fill=\"#4A3B2E\" opacity=\"0.08\"/>\n      <!-- 뒷머리: 머리~어깨 하나로 감싸는 실루엣 -->\n      <path d=\"M64 78 Q54 138 72 172 Q100 180 128 172 Q146 138 136 78 Q124 52 100 52 Q76 52 64 78 Z\" fill=\"url(#gHairG)\"/>\n      <!-- 몸통 -->\n      <path d=\"M66 174 Q68 114 100 112 Q132 114 134 174 Z\" fill=\"url(#gCard)\"/>\n      <path d=\"M82 122 Q100 132 118 122 L118 131 Q100 141 82 131 Z\" fill=\"#FFE08A\"/>\n      <circle cx=\"100\" cy=\"146\" r=\"2.6\" fill=\"#F5B93E\"/>\n      <circle cx=\"100\" cy=\"158\" r=\"2.6\" fill=\"#F5B93E\"/>\n      <!-- 머리 -->\n      <circle cx=\"100\" cy=\"80\" r=\"40\" fill=\"url(#gHairG)\"/>\n      <circle cx=\"100\" cy=\"90\" r=\"33\" fill=\"#FDEDDD\"/>\n      <path d=\"M66 86 Q66 52 100 50 Q134 52 134 86 L126 90 Q126 66 112 62 L116 86 L100 64 L86 88 L84 64 Q74 68 74 90 Z\" fill=\"url(#gHairG)\"/>\n      <path d=\"M76 60 Q88 52 102 52\" stroke=\"#B08256\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.7\"/>\n      <path d=\"M124 60 L129 70 L140 71 L132 78 L134 89 L124 83 L114 89 L116 78 L108 71 L119 70 Z\" fill=\"url(#gGold)\"/>\n      <path d=\"M78 82 Q83 78 88 82\" stroke=\"#6B452C\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n      <path d=\"M112 82 Q117 78 122 82\" stroke=\"#6B452C\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n      <circle cx=\"85\" cy=\"92\" r=\"5\" fill=\"#4A3B2E\"/>\n      <circle cx=\"115\" cy=\"92\" r=\"5\" fill=\"#4A3B2E\"/>\n      <circle cx=\"83.4\" cy=\"90.4\" r=\"1.9\" fill=\"#fff\"/>\n      <circle cx=\"113.4\" cy=\"90.4\" r=\"1.9\" fill=\"#fff\"/>\n      <circle cx=\"86.8\" cy=\"94\" r=\"1\" fill=\"#fff\"/>\n      <circle cx=\"116.8\" cy=\"94\" r=\"1\" fill=\"#fff\"/>\n      <line x1=\"78\" y1=\"87\" x2=\"74\" y2=\"84\" stroke=\"#4A3B2E\" stroke-width=\"2.2\" stroke-linecap=\"round\"/>\n      <line x1=\"122\" y1=\"87\" x2=\"126\" y2=\"84\" stroke=\"#4A3B2E\" stroke-width=\"2.2\" stroke-linecap=\"round\"/>\n      <ellipse cx=\"73\" cy=\"104\" rx=\"6\" ry=\"4\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n      <ellipse cx=\"127\" cy=\"104\" rx=\"6\" ry=\"4\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n      <path d=\"M92 106 Q100 116 108 106 Q100 111 92 106 Z\" fill=\"#E8836B\"/>\n      <path d=\"M136 108 L138 112 L142 112 L139 115 L140 119 L136 117 L132 119 L133 115 L130 112 L134 112 Z\" fill=\"#FFD65C\" opacity=\"0.9\"/></symbol><symbol id=\"ch-juho-dawn\" viewBox=\"0 0 240 200\"><rect width=\"240\" height=\"200\" fill=\"url(#gDawn)\"/>\n        <path d=\"M212 46 A19 19 0 1 1 200 14 A15 15 0 1 0 212 46 Z\" fill=\"url(#gGold)\"/>\n        <circle cx=\"40\" cy=\"30\" r=\"3\" fill=\"#fff\"/><circle cx=\"70\" cy=\"52\" r=\"2.5\" fill=\"#FFE9B0\"/><circle cx=\"160\" cy=\"24\" r=\"2.5\" fill=\"#fff\"/><circle cx=\"32\" cy=\"66\" r=\"2.5\" fill=\"#FFE9B0\"/>\n        <rect x=\"0\" y=\"154\" width=\"240\" height=\"46\" fill=\"#9C94D6\"/>\n        <rect x=\"176\" y=\"114\" width=\"10\" height=\"32\" rx=\"4\" fill=\"#FFF3D1\"/>\n        <ellipse cx=\"181\" cy=\"107\" rx=\"5.5\" ry=\"9\" fill=\"#FF9E4D\"/>\n        <ellipse cx=\"181\" cy=\"105\" rx=\"2.6\" ry=\"4.5\" fill=\"#FFE49C\"/>\n        <ellipse cx=\"181\" cy=\"150\" rx=\"15\" ry=\"4\" fill=\"#877ECB\"/>\n        <ellipse cx=\"120\" cy=\"168\" rx=\"34\" ry=\"6\" fill=\"#4A3B2E\" opacity=\"0.12\"/>\n        <path d=\"M96 166 Q98 112 120 110 Q142 112 144 166 Z\" fill=\"url(#gHood)\"/>\n        <path d=\"M100 138 Q106 128 114 132 L114 148 Q106 150 100 144 Z\" fill=\"#FDEDDD\"/>\n        <path d=\"M140 138 Q134 128 126 132 L126 148 Q134 150 140 144 Z\" fill=\"#FDEDDD\"/>\n        <ellipse cx=\"120\" cy=\"140\" rx=\"8\" ry=\"13\" fill=\"#FDEDDD\"/>\n        <line x1=\"120\" y1=\"129\" x2=\"120\" y2=\"151\" stroke=\"#F0D5BC\" stroke-width=\"2\"/>\n        <circle cx=\"120\" cy=\"84\" r=\"26\" fill=\"url(#gHairB)\"/>\n        <circle cx=\"120\" cy=\"90\" r=\"21\" fill=\"#FDEDDD\"/>\n        <path d=\"M99 86 Q101 68 120 66 Q139 68 141 86 L134 90 Q133 76 126 74 L127 88 L119 76 L112 90 L110 75 Q104 78 104 90 Z\" fill=\"url(#gHairB)\"/>\n        <path d=\"M105 72 Q112 67 120 67\" stroke=\"#B98E60\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.7\"/>\n        <circle cx=\"111\" cy=\"90\" r=\"7.5\" fill=\"none\" stroke=\"#6B5233\" stroke-width=\"2.5\"/>\n        <circle cx=\"129\" cy=\"90\" r=\"7.5\" fill=\"none\" stroke=\"#6B5233\" stroke-width=\"2.5\"/>\n        <path d=\"M107 92 Q111 95 115 92\" stroke=\"#4A3B2E\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M125 92 Q129 95 133 92\" stroke=\"#4A3B2E\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M106 84 Q110 81 114 84\" stroke=\"#7C5636\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M126 84 Q130 81 134 84\" stroke=\"#7C5636\" stroke-width=\"2\" fill=\"none\" stroke-linecap=\"round\"/>\n        <ellipse cx=\"103\" cy=\"98\" rx=\"5\" ry=\"3.5\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <ellipse cx=\"137\" cy=\"98\" rx=\"5\" ry=\"3.5\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <path d=\"M115 104 Q120 108 125 104\" stroke=\"#D96A57\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M52 96 L55 103 L62 104 L57 109 L58 116 L52 112 L46 116 L47 109 L42 104 L49 103 Z\" fill=\"#FFD65C\"/></symbol><symbol id=\"ch-juho-write\" viewBox=\"0 0 240 200\"><rect width=\"240\" height=\"200\" fill=\"url(#gCream)\"/>\n        <path d=\"M40 58 L44 68 L54 69 L46 76 L48 86 L40 80 L32 86 L34 76 L26 69 L36 68 Z\" fill=\"url(#gGold)\"/>\n        <rect x=\"188\" y=\"96\" width=\"22\" height=\"26\" rx=\"5\" fill=\"#8ED1C9\"/>\n        <path d=\"M193 96 Q193 88 199 88 Q205 88 205 96\" stroke=\"#8ED1C9\" stroke-width=\"4\" fill=\"none\"/>\n        <path d=\"M196 84 Q194 78 198 74 M203 84 Q205 78 201 74\" stroke=\"#D9CDB4\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M104 140 Q106 92 120 90 Q134 92 136 140 Z\" fill=\"url(#gHood)\"/>\n        <path d=\"M134 112 Q148 116 154 126\" stroke=\"#84B3DE\" stroke-width=\"10\" fill=\"none\" stroke-linecap=\"round\"/>\n        <circle cx=\"156\" cy=\"128\" r=\"6.5\" fill=\"#FDEDDD\"/>\n        <line x1=\"158\" y1=\"124\" x2=\"168\" y2=\"110\" stroke=\"#FF9E4D\" stroke-width=\"4.5\" stroke-linecap=\"round\"/>\n        <path d=\"M167 108 L171 112\" stroke=\"#6B5233\" stroke-width=\"3\" stroke-linecap=\"round\"/>\n        <circle cx=\"120\" cy=\"64\" r=\"26\" fill=\"url(#gHairB)\"/>\n        <circle cx=\"120\" cy=\"70\" r=\"21\" fill=\"#FDEDDD\"/>\n        <path d=\"M99 66 Q101 48 120 46 Q139 48 141 66 L134 70 Q133 56 126 54 L127 68 L119 56 L112 70 L110 55 Q104 58 104 70 Z\" fill=\"url(#gHairB)\"/>\n        <path d=\"M105 52 Q112 47 120 47\" stroke=\"#B98E60\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.7\"/>\n        <circle cx=\"111\" cy=\"70\" r=\"7.5\" fill=\"none\" stroke=\"#6B5233\" stroke-width=\"2.5\"/>\n        <circle cx=\"129\" cy=\"70\" r=\"7.5\" fill=\"none\" stroke=\"#6B5233\" stroke-width=\"2.5\"/>\n        <circle cx=\"111\" cy=\"71\" r=\"3.5\" fill=\"#4A3B2E\"/><circle cx=\"129\" cy=\"71\" r=\"3.5\" fill=\"#4A3B2E\"/>\n        <circle cx=\"109.8\" cy=\"69.8\" r=\"1.3\" fill=\"#fff\"/><circle cx=\"127.8\" cy=\"69.8\" r=\"1.3\" fill=\"#fff\"/>\n        <ellipse cx=\"103\" cy=\"78\" rx=\"5\" ry=\"3.5\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <ellipse cx=\"137\" cy=\"78\" rx=\"5\" ry=\"3.5\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <ellipse cx=\"120\" cy=\"84\" rx=\"3.5\" ry=\"4.5\" fill=\"#E8836B\"/>\n        <rect x=\"0\" y=\"136\" width=\"240\" height=\"14\" fill=\"#D9A96B\"/>\n        <rect x=\"0\" y=\"148\" width=\"240\" height=\"52\" fill=\"#EBC894\"/>\n        <path d=\"M70 138 L118 134 L120 158 L74 162 Z\" fill=\"#fff\"/>\n        <path d=\"M170 138 L122 134 L120 158 L166 162 Z\" fill=\"#FFFDF6\"/>\n        <line x1=\"120\" y1=\"134\" x2=\"120\" y2=\"158\" stroke=\"#E0D4BC\" stroke-width=\"2\"/>\n        <line x1=\"82\" y1=\"144\" x2=\"110\" y2=\"142\" stroke=\"#D9CDB4\" stroke-width=\"2.5\"/>\n        <line x1=\"84\" y1=\"151\" x2=\"108\" y2=\"149\" stroke=\"#D9CDB4\" stroke-width=\"2.5\"/>\n        <line x1=\"130\" y1=\"142\" x2=\"152\" y2=\"144\" stroke=\"#B7A8E0\" stroke-width=\"2.5\"/>\n        <line x1=\"132\" y1=\"149\" x2=\"148\" y2=\"151\" stroke=\"#B7A8E0\" stroke-width=\"2.5\"/>\n        <circle cx=\"60\" y=\"0\" cy=\"118\" r=\"4\" fill=\"#FFB84D\"/></symbol><symbol id=\"ch-juho-read\" viewBox=\"0 0 240 200\"><rect width=\"240\" height=\"200\" fill=\"url(#gMint)\"/>\n        <circle cx=\"42\" cy=\"42\" r=\"14\" fill=\"#BDE3CB\"/>\n        <circle cx=\"204\" cy=\"58\" r=\"10\" fill=\"#BDE3CB\"/>\n        <rect x=\"26\" y=\"128\" width=\"26\" height=\"22\" rx=\"4\" fill=\"#E8956B\"/>\n        <path d=\"M32 128 Q30 112 39 106 Q48 112 46 128 Z\" fill=\"#6FB584\"/>\n        <path d=\"M39 108 Q36 98 39 92\" stroke=\"#6FB584\" stroke-width=\"3.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <text x=\"190\" y=\"118\" font-size=\"15\" fill=\"#3E8A57\" font-weight=\"bold\">50p</text>\n        <ellipse cx=\"120\" cy=\"176\" rx=\"40\" ry=\"6\" fill=\"#4A3B2E\" opacity=\"0.1\"/>\n        <path d=\"M94 176 Q96 108 120 106 Q144 108 146 176 Z\" fill=\"url(#gGreen)\"/>\n        <circle cx=\"120\" cy=\"76\" r=\"26\" fill=\"url(#gHairB)\"/>\n        <circle cx=\"120\" cy=\"82\" r=\"21\" fill=\"#FDEDDD\"/>\n        <path d=\"M99 78 Q101 60 120 58 Q139 60 141 78 L134 82 Q133 68 126 66 L127 80 L119 68 L112 82 L110 67 Q104 70 104 82 Z\" fill=\"url(#gHairB)\"/>\n        <path d=\"M105 64 Q112 59 120 59\" stroke=\"#B98E60\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.7\"/>\n        <circle cx=\"111\" cy=\"82\" r=\"7.5\" fill=\"none\" stroke=\"#6B5233\" stroke-width=\"2.5\"/>\n        <circle cx=\"129\" cy=\"82\" r=\"7.5\" fill=\"none\" stroke=\"#6B5233\" stroke-width=\"2.5\"/>\n        <path d=\"M107 82 L111 85 L115 80\" stroke=\"#4A3B2E\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M125 82 L129 85 L133 80\" stroke=\"#4A3B2E\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <ellipse cx=\"103\" cy=\"90\" rx=\"5\" ry=\"3.5\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <ellipse cx=\"137\" cy=\"90\" rx=\"5\" ry=\"3.5\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <path d=\"M113 96 Q120 103 127 96 Q120 99 113 96 Z\" fill=\"#E8836B\"/>\n        <path d=\"M100 118 Q88 126 84 138\" stroke=\"#84BC95\" stroke-width=\"10\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M140 118 Q152 126 156 138\" stroke=\"#84BC95\" stroke-width=\"10\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M80 126 L118 138 L118 170 L80 158 Z\" fill=\"#fff\"/>\n        <path d=\"M160 126 L122 138 L122 170 L160 158 Z\" fill=\"#FFFDF6\"/>\n        <line x1=\"120\" y1=\"138\" x2=\"120\" y2=\"170\" stroke=\"#E0D4BC\" stroke-width=\"2\"/>\n        <line x1=\"88\" y1=\"138\" x2=\"110\" y2=\"145\" stroke=\"#D9CDB4\" stroke-width=\"2.5\"/>\n        <line x1=\"88\" y1=\"146\" x2=\"110\" y2=\"153\" stroke=\"#D9CDB4\" stroke-width=\"2.5\"/>\n        <line x1=\"152\" y1=\"138\" x2=\"130\" y2=\"145\" stroke=\"#D9CDB4\" stroke-width=\"2.5\"/>\n        <circle cx=\"82\" cy=\"128\" r=\"6.5\" fill=\"#FDEDDD\"/>\n        <circle cx=\"158\" cy=\"128\" r=\"6.5\" fill=\"#FDEDDD\"/>\n        <path d=\"M170 84 L172 88 L176 88 L173 91 L174 95 L170 93 L166 95 L167 91 L164 88 L168 88 Z\" fill=\"#FFD65C\"/></symbol><symbol id=\"ch-juho-math\" viewBox=\"0 0 240 200\"><rect width=\"240\" height=\"200\" fill=\"url(#gBlue)\"/>\n        <rect x=\"150\" y=\"32\" width=\"66\" height=\"50\" rx=\"9\" fill=\"#fff\"/>\n        <text x=\"160\" y=\"54\" font-size=\"13\" fill=\"#4E86C6\" font-weight=\"bold\">7×8=?</text>\n        <text x=\"160\" y=\"72\" font-size=\"13\" fill=\"#4E86C6\" font-weight=\"bold\">√144</text>\n        <rect x=\"28\" y=\"40\" width=\"14\" height=\"34\" rx=\"5\" fill=\"#8ED1C9\"/>\n        <line x1=\"35\" y1=\"40\" x2=\"35\" y2=\"30\" stroke=\"#FF9E4D\" stroke-width=\"4\" stroke-linecap=\"round\"/>\n        <line x1=\"31\" y1=\"42\" x2=\"31\" y2=\"34\" stroke=\"#B39FE6\" stroke-width=\"3.5\" stroke-linecap=\"round\"/>\n        <line x1=\"39\" y1=\"42\" x2=\"39\" y2=\"33\" stroke=\"#FFD65C\" stroke-width=\"3.5\" stroke-linecap=\"round\"/>\n        <path d=\"M84 138 Q86 92 106 90 Q126 92 128 138 Z\" fill=\"url(#gHood)\"/>\n        <path d=\"M122 112 Q136 116 142 126\" stroke=\"#84B3DE\" stroke-width=\"10\" fill=\"none\" stroke-linecap=\"round\"/>\n        <circle cx=\"144\" cy=\"128\" r=\"6.5\" fill=\"#FDEDDD\"/>\n        <line x1=\"146\" y1=\"124\" x2=\"156\" y2=\"110\" stroke=\"#FF9E4D\" stroke-width=\"4.5\" stroke-linecap=\"round\"/>\n        <circle cx=\"106\" cy=\"64\" r=\"26\" fill=\"url(#gHairB)\"/>\n        <circle cx=\"106\" cy=\"70\" r=\"21\" fill=\"#FDEDDD\"/>\n        <path d=\"M85 66 Q87 48 106 46 Q125 48 127 66 L120 70 Q119 56 112 54 L113 68 L105 56 L98 70 L96 55 Q90 58 90 70 Z\" fill=\"url(#gHairB)\"/>\n        <path d=\"M91 52 Q98 47 106 47\" stroke=\"#B98E60\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.7\"/>\n        <circle cx=\"97\" cy=\"70\" r=\"7.5\" fill=\"none\" stroke=\"#6B5233\" stroke-width=\"2.5\"/>\n        <circle cx=\"115\" cy=\"70\" r=\"7.5\" fill=\"none\" stroke=\"#6B5233\" stroke-width=\"2.5\"/>\n        <circle cx=\"97\" cy=\"71\" r=\"3.5\" fill=\"#4A3B2E\"/><circle cx=\"115\" cy=\"71\" r=\"3.5\" fill=\"#4A3B2E\"/>\n        <circle cx=\"95.8\" cy=\"69.8\" r=\"1.3\" fill=\"#fff\"/><circle cx=\"113.8\" cy=\"69.8\" r=\"1.3\" fill=\"#fff\"/>\n        <path d=\"M92 62 L100 64 M120 64 L128 62\" stroke=\"#7C5636\" stroke-width=\"2.2\" stroke-linecap=\"round\"/>\n        <ellipse cx=\"89\" cy=\"78\" rx=\"5\" ry=\"3.5\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <ellipse cx=\"123\" cy=\"78\" rx=\"5\" ry=\"3.5\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <path d=\"M100 84 Q106 89 112 84\" stroke=\"#D96A57\" stroke-width=\"2.8\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M130 54 Q135 50 134 44\" stroke=\"#A5D8F0\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"/>\n        <rect x=\"0\" y=\"134\" width=\"240\" height=\"12\" fill=\"#A9C4DE\"/>\n        <rect x=\"0\" y=\"144\" width=\"240\" height=\"56\" fill=\"#C3D8EC\"/>\n        <rect x=\"52\" y=\"152\" width=\"130\" height=\"17\" rx=\"6\" fill=\"#fff\"/>\n        <text x=\"62\" y=\"164\" font-size=\"10\" fill=\"#8A7B6B\">수학 문제 20 / 20  ✓</text></symbol><symbol id=\"ch-juho-clean\" viewBox=\"0 0 240 200\"><rect width=\"240\" height=\"200\" fill=\"url(#gSunny)\"/>\n        <rect x=\"0\" y=\"152\" width=\"240\" height=\"48\" fill=\"#E8CE96\"/>\n        <rect x=\"18\" y=\"66\" width=\"52\" height=\"86\" rx=\"6\" fill=\"#F5E6C4\"/>\n        <rect x=\"24\" y=\"74\" width=\"40\" height=\"16\" rx=\"4\" fill=\"#fff\"/>\n        <rect x=\"24\" y=\"96\" width=\"40\" height=\"16\" rx=\"4\" fill=\"#B7DCEB\"/>\n        <rect x=\"24\" y=\"118\" width=\"40\" height=\"16\" rx=\"4\" fill=\"#F2C7A0\"/>\n        <path d=\"M52 38 L55 45 L62 46 L57 51 L58 58 L52 54 L46 58 L47 51 L42 46 L49 45 Z\" fill=\"#8ED1C9\"/>\n        <circle cx=\"206\" cy=\"50\" r=\"4\" fill=\"#B39FE6\"/>\n        <line x1=\"160\" y1=\"134\" x2=\"188\" y2=\"94\" stroke=\"#C9853F\" stroke-width=\"6\" stroke-linecap=\"round\"/>\n        <path d=\"M176 130 L200 130 L206 162 L170 162 Z\" fill=\"url(#gGold)\"/>\n        <line x1=\"180\" y1=\"136\" x2=\"178\" y2=\"158\" stroke=\"#E0A63A\" stroke-width=\"3\"/>\n        <line x1=\"188\" y1=\"136\" x2=\"188\" y2=\"158\" stroke=\"#E0A63A\" stroke-width=\"3\"/>\n        <line x1=\"196\" y1=\"136\" x2=\"198\" y2=\"158\" stroke=\"#E0A63A\" stroke-width=\"3\"/>\n        <ellipse cx=\"120\" cy=\"168\" rx=\"34\" ry=\"6\" fill=\"#4A3B2E\" opacity=\"0.1\"/>\n        <path d=\"M100 166 Q102 108 120 106 Q138 108 140 166 Z\" fill=\"url(#gHood)\"/>\n        <path d=\"M136 122 Q150 126 158 134\" stroke=\"#84B3DE\" stroke-width=\"10\" fill=\"none\" stroke-linecap=\"round\"/>\n        <circle cx=\"160\" cy=\"134\" r=\"6.5\" fill=\"#FDEDDD\"/>\n        <circle cx=\"120\" cy=\"78\" r=\"26\" fill=\"url(#gHairB)\"/>\n        <circle cx=\"120\" cy=\"84\" r=\"21\" fill=\"#FDEDDD\"/>\n        <path d=\"M99 80 Q101 62 120 60 Q139 62 141 80 L134 84 Q133 70 126 68 L127 82 L119 70 L112 84 L110 69 Q104 72 104 84 Z\" fill=\"url(#gHairB)\"/>\n        <path d=\"M105 66 Q112 61 120 61\" stroke=\"#B98E60\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.7\"/>\n        <circle cx=\"111\" cy=\"84\" r=\"7.5\" fill=\"none\" stroke=\"#6B5233\" stroke-width=\"2.5\"/>\n        <circle cx=\"129\" cy=\"84\" r=\"7.5\" fill=\"none\" stroke=\"#6B5233\" stroke-width=\"2.5\"/>\n        <circle cx=\"111\" cy=\"85\" r=\"3.5\" fill=\"#4A3B2E\"/><circle cx=\"129\" cy=\"85\" r=\"3.5\" fill=\"#4A3B2E\"/>\n        <circle cx=\"109.8\" cy=\"83.8\" r=\"1.3\" fill=\"#fff\"/><circle cx=\"127.8\" cy=\"83.8\" r=\"1.3\" fill=\"#fff\"/>\n        <ellipse cx=\"103\" cy=\"92\" rx=\"5\" ry=\"3.5\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <ellipse cx=\"137\" cy=\"92\" rx=\"5\" ry=\"3.5\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <path d=\"M112 97 Q120 105 128 97 Q120 101 112 97 Z\" fill=\"#E8836B\"/>\n        <path d=\"M84 118 L86 122 L90 122 L87 125 L88 129 L84 127 L80 129 L81 125 L78 122 L82 122 Z\" fill=\"#8ED1C9\"/></symbol><symbol id=\"ch-juho-sleep\" viewBox=\"0 0 240 200\"><rect width=\"240\" height=\"200\" fill=\"url(#gNight)\"/>\n        <path d=\"M196 44 A22 22 0 1 1 182 8 A17 17 0 1 0 196 44 Z\" fill=\"url(#gGold)\"/>\n        <circle cx=\"46\" cy=\"34\" r=\"3\" fill=\"#fff\"/><circle cx=\"90\" cy=\"24\" r=\"2.5\" fill=\"#FFE9B0\"/><circle cx=\"140\" cy=\"40\" r=\"2.5\" fill=\"#fff\"/>\n        <rect x=\"24\" y=\"118\" width=\"192\" height=\"54\" rx=\"14\" fill=\"#EFEBFA\"/>\n        <ellipse cx=\"62\" cy=\"104\" rx=\"28\" ry=\"15\" fill=\"#fff\"/>\n        <circle cx=\"62\" cy=\"88\" r=\"23\" fill=\"url(#gHairB)\"/>\n        <circle cx=\"62\" cy=\"93\" r=\"19\" fill=\"#FDEDDD\"/>\n        <path d=\"M43 90 Q45 73 62 71 Q79 73 81 90 L75 93 Q74 80 68 78 L69 91 L62 80 L55 93 L53 79 Q48 82 48 93 Z\" fill=\"url(#gHairB)\"/>\n        <path d=\"M49 77 Q55 72 62 72\" stroke=\"#B98E60\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.7\"/>\n        <path d=\"M53 95 Q57 98 61 95\" stroke=\"#4A3B2E\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M65 95 Q69 98 73 95\" stroke=\"#4A3B2E\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <ellipse cx=\"48\" cy=\"101\" rx=\"4.5\" ry=\"3\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <ellipse cx=\"76\" cy=\"101\" rx=\"4.5\" ry=\"3\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <ellipse cx=\"62\" cy=\"106\" rx=\"3\" ry=\"3.8\" fill=\"#E8836B\"/>\n        <path d=\"M24 122 Q60 106 120 116 Q180 126 216 116 L216 148 Q120 158 24 150 Z\" fill=\"url(#gHood)\"/>\n        <path d=\"M40 118 Q62 110 86 116\" stroke=\"#B7D6EE\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <circle cx=\"200\" cy=\"132\" r=\"7\" fill=\"#FFD65C\" opacity=\"0.9\"/>\n        <text x=\"104\" y=\"76\" font-size=\"17\" fill=\"#fff\" font-weight=\"bold\">Z</text>\n        <text x=\"118\" y=\"62\" font-size=\"13\" fill=\"#FFE9B0\" font-weight=\"bold\">z</text>\n        <text x=\"130\" y=\"52\" font-size=\"10\" fill=\"#fff\" font-weight=\"bold\">z</text>\n        <rect x=\"148\" y=\"70\" width=\"52\" height=\"22\" rx=\"8\" fill=\"#fff\"/>\n        <text x=\"155\" y=\"86\" font-size=\"12\" fill=\"#6F5BB5\" font-weight=\"bold\">11:30</text></symbol><symbol id=\"ch-juho-done\" viewBox=\"0 0 240 200\"><rect width=\"240\" height=\"200\" fill=\"url(#gSunny)\"/>\n        <path d=\"M36 40 L40 50 L50 51 L42 58 L44 68 L36 62 L28 68 L30 58 L22 51 L32 50 Z\" fill=\"#FF9E4D\"/>\n        <path d=\"M204 56 L207 64 L215 65 L209 70 L211 78 L204 73 L197 78 L199 70 L193 65 L201 64 Z\" fill=\"#84B3DE\"/>\n        <circle cx=\"60\" cy=\"120\" r=\"4\" fill=\"#6FB584\"/><circle cx=\"196\" cy=\"120\" r=\"4\" fill=\"#B39FE6\"/>\n        <circle cx=\"46\" cy=\"86\" r=\"3\" fill=\"#8ED1C9\"/><circle cx=\"192\" cy=\"94\" r=\"3\" fill=\"#FFD65C\"/>\n        <rect x=\"26\" y=\"26\" width=\"6\" height=\"12\" rx=\"3\" fill=\"#B39FE6\" transform=\"rotate(24 29 32)\"/>\n        <rect x=\"206\" y=\"24\" width=\"6\" height=\"12\" rx=\"3\" fill=\"#6FB584\" transform=\"rotate(-20 209 30)\"/>\n        <rect x=\"160\" y=\"140\" width=\"6\" height=\"10\" rx=\"3\" fill=\"#FF9E4D\" transform=\"rotate(40 163 145)\"/>\n        <path d=\"M98 130 Q82 114 76 96\" stroke=\"#84B3DE\" stroke-width=\"11\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M142 130 Q158 114 164 96\" stroke=\"#84B3DE\" stroke-width=\"11\" fill=\"none\" stroke-linecap=\"round\"/>\n        <circle cx=\"74\" cy=\"92\" r=\"6.5\" fill=\"#FDEDDD\"/>\n        <circle cx=\"166\" cy=\"92\" r=\"6.5\" fill=\"#FDEDDD\"/>\n        <ellipse cx=\"120\" cy=\"174\" rx=\"36\" ry=\"6\" fill=\"#4A3B2E\" opacity=\"0.1\"/>\n        <path d=\"M96 172 Q98 118 120 116 Q142 118 144 172 Z\" fill=\"url(#gHood)\"/>\n        <circle cx=\"120\" cy=\"150\" r=\"6.5\" fill=\"#fff\"/>\n        <circle cx=\"120\" cy=\"150\" r=\"2.6\" fill=\"#4E86C6\"/>\n        <circle cx=\"120\" cy=\"88\" r=\"27\" fill=\"url(#gHairB)\"/>\n        <circle cx=\"120\" cy=\"95\" r=\"22\" fill=\"#FDEDDD\"/>\n        <path d=\"M98 90 Q100 70 120 68 Q140 70 142 90 L135 94 Q134 79 127 77 L128 92 L119 79 L112 94 L110 78 Q103 81 103 94 Z\" fill=\"url(#gHairB)\"/>\n        <path d=\"M104 74 Q112 69 120 69\" stroke=\"#B98E60\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.7\"/>\n        <circle cx=\"111\" cy=\"94\" r=\"7.5\" fill=\"none\" stroke=\"#6B5233\" stroke-width=\"2.5\"/>\n        <circle cx=\"129\" cy=\"94\" r=\"7.5\" fill=\"none\" stroke=\"#6B5233\" stroke-width=\"2.5\"/>\n        <path d=\"M107 94 Q111 90 115 94\" stroke=\"#4A3B2E\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M125 94 Q129 90 133 94\" stroke=\"#4A3B2E\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <ellipse cx=\"103\" cy=\"102\" rx=\"5.5\" ry=\"4\" fill=\"#F8BE96\" opacity=\"0.9\"/>\n        <ellipse cx=\"137\" cy=\"102\" rx=\"5.5\" ry=\"4\" fill=\"#F8BE96\" opacity=\"0.9\"/>\n        <path d=\"M110 106 Q120 118 130 106 Q120 111 110 106 Z\" fill=\"#E8836B\"/>\n        <ellipse cx=\"120\" cy=\"112\" rx=\"4\" ry=\"2.4\" fill=\"#F5998A\"/>\n        <rect x=\"76\" y=\"152\" width=\"88\" height=\"24\" rx=\"12\" fill=\"url(#gGold)\"/>\n        <text x=\"90\" y=\"169\" font-size=\"12\" fill=\"#7A5210\" font-weight=\"bold\">미션 완료!</text></symbol><symbol id=\"ch-jua-dawn\" viewBox=\"0 0 240 200\"><rect width=\"240\" height=\"200\" fill=\"url(#gDawn)\"/>\n        <path d=\"M56 44 A19 19 0 1 1 44 12 A15 15 0 1 0 56 44 Z\" fill=\"url(#gGold)\"/>\n        <circle cx=\"190\" cy=\"28\" r=\"3\" fill=\"#fff\"/><circle cx=\"150\" cy=\"50\" r=\"2.5\" fill=\"#FFE9B0\"/><circle cx=\"216\" cy=\"60\" r=\"2.5\" fill=\"#fff\"/>\n        <rect x=\"0\" y=\"154\" width=\"240\" height=\"46\" fill=\"#9C94D6\"/>\n        <rect x=\"40\" y=\"114\" width=\"10\" height=\"32\" rx=\"4\" fill=\"#FFF3D1\"/>\n        <ellipse cx=\"45\" cy=\"107\" rx=\"5.5\" ry=\"9\" fill=\"#FF9E4D\"/>\n        <ellipse cx=\"45\" cy=\"105\" rx=\"2.6\" ry=\"4.5\" fill=\"#FFE49C\"/>\n        <ellipse cx=\"45\" cy=\"150\" rx=\"15\" ry=\"4\" fill=\"#877ECB\"/>\n        <ellipse cx=\"120\" cy=\"168\" rx=\"34\" ry=\"6\" fill=\"#4A3B2E\" opacity=\"0.12\"/>\n        <!-- 뒷머리: 머리~어깨 연속 실루엣 -->\n        <path d=\"M100 82 Q92 128 102 162 Q120 168 138 162 Q148 128 140 82 Q132 64 120 64 Q108 64 100 82 Z\" fill=\"url(#gHairG)\"/>\n        <path d=\"M96 166 Q98 116 120 114 Q142 116 144 166 Z\" fill=\"url(#gCard)\"/>\n        <path d=\"M100 140 Q106 130 114 134 L114 150 Q106 152 100 146 Z\" fill=\"#FDEDDD\"/>\n        <path d=\"M140 140 Q134 130 126 134 L126 150 Q134 152 140 146 Z\" fill=\"#FDEDDD\"/>\n        <ellipse cx=\"120\" cy=\"142\" rx=\"8\" ry=\"13\" fill=\"#FDEDDD\"/>\n        <line x1=\"120\" y1=\"131\" x2=\"120\" y2=\"153\" stroke=\"#F0D5BC\" stroke-width=\"2\"/>\n        <circle cx=\"120\" cy=\"88\" r=\"26\" fill=\"url(#gHairG)\"/>\n        <circle cx=\"120\" cy=\"95\" r=\"21\" fill=\"#FDEDDD\"/>\n        <path d=\"M98 92 Q98 68 120 66 Q142 68 142 92 L136 95 Q136 78 126 75 L128 92 L120 76 L110 93 L109 76 Q104 79 104 95 Z\" fill=\"url(#gHairG)\"/>\n        <path d=\"M104 72 Q112 67 120 67\" stroke=\"#B08256\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.7\"/>\n        <path d=\"M134 72 L137 78 L143 79 L139 83 L140 89 L134 86 L128 89 L129 83 L125 79 L131 78 Z\" fill=\"url(#gGold)\"/>\n        <path d=\"M108 96 Q112 99 116 96\" stroke=\"#4A3B2E\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M124 96 Q128 99 132 96\" stroke=\"#4A3B2E\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <line x1=\"106\" y1=\"92\" x2=\"103\" y2=\"90\" stroke=\"#4A3B2E\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n        <line x1=\"134\" y1=\"92\" x2=\"137\" y2=\"90\" stroke=\"#4A3B2E\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n        <ellipse cx=\"103\" cy=\"102\" rx=\"5\" ry=\"3.5\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <ellipse cx=\"137\" cy=\"102\" rx=\"5\" ry=\"3.5\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <path d=\"M115 108 Q120 112 125 108\" stroke=\"#D96A57\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M192 96 L195 103 L202 104 L197 109 L198 116 L192 112 L186 116 L187 109 L182 104 L189 103 Z\" fill=\"#FFD65C\"/></symbol><symbol id=\"ch-jua-sing\" viewBox=\"0 0 240 200\"><rect width=\"240\" height=\"200\" fill=\"url(#gLav)\"/>\n        <path d=\"M52 60 L52 40 L66 37 L66 54\" stroke=\"#8E7CD1\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"/>\n        <circle cx=\"49\" cy=\"60\" r=\"6\" fill=\"#8E7CD1\"/><circle cx=\"63\" cy=\"54\" r=\"6\" fill=\"#8E7CD1\"/>\n        <circle cx=\"196\" cy=\"52\" r=\"5\" fill=\"#5FBFAE\"/>\n        <path d=\"M196 52 L196 34 L206 32\" stroke=\"#5FBFAE\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"/>\n        <circle cx=\"184\" cy=\"118\" r=\"4\" fill=\"#FFD65C\"/>\n        <circle cx=\"46\" cy=\"112\" r=\"3\" fill=\"#FF9E4D\"/>\n        <ellipse cx=\"120\" cy=\"174\" rx=\"34\" ry=\"6\" fill=\"#4A3B2E\" opacity=\"0.1\"/>\n        <path d=\"M100 86 Q92 132 102 168 Q120 174 138 168 Q148 132 140 86 Q132 68 120 68 Q108 68 100 86 Z\" fill=\"url(#gHairG)\"/>\n        <path d=\"M96 172 Q98 122 120 120 Q142 122 144 172 Z\" fill=\"url(#gCard)\"/>\n        <path d=\"M104 130 Q120 140 136 130 L136 139 Q120 149 104 139 Z\" fill=\"#FFE08A\"/>\n        <circle cx=\"120\" cy=\"152\" r=\"2.4\" fill=\"#F5B93E\"/>\n        <circle cx=\"120\" cy=\"162\" r=\"2.4\" fill=\"#F5B93E\"/>\n        <circle cx=\"120\" cy=\"92\" r=\"27\" fill=\"url(#gHairG)\"/>\n        <circle cx=\"120\" cy=\"99\" r=\"22\" fill=\"#FDEDDD\"/>\n        <path d=\"M97 96 Q97 70 120 68 Q143 70 143 96 L137 99 Q137 81 126 78 L128 96 L120 79 L110 97 L109 79 Q103 82 103 99 Z\" fill=\"url(#gHairG)\"/>\n        <path d=\"M103 74 Q112 69 121 69\" stroke=\"#B08256\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.7\"/>\n        <path d=\"M94 88 Q120 60 146 88\" stroke=\"#5FBFAE\" stroke-width=\"8\" fill=\"none\" stroke-linecap=\"round\"/>\n        <ellipse cx=\"93\" cy=\"98\" rx=\"9\" ry=\"12\" fill=\"#5FBFAE\"/>\n        <ellipse cx=\"147\" cy=\"98\" rx=\"9\" ry=\"12\" fill=\"#5FBFAE\"/>\n        <circle cx=\"93\" cy=\"98\" r=\"4\" fill=\"#A8E3D8\"/>\n        <circle cx=\"147\" cy=\"98\" r=\"4\" fill=\"#A8E3D8\"/>\n        <path d=\"M108 100 Q112 96 116 100\" stroke=\"#4A3B2E\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M124 100 Q128 96 132 100\" stroke=\"#4A3B2E\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <ellipse cx=\"104\" cy=\"107\" rx=\"5\" ry=\"3.5\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <ellipse cx=\"136\" cy=\"107\" rx=\"5\" ry=\"3.5\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <path d=\"M112 111 Q120 120 128 111 Q120 115 112 111 Z\" fill=\"#E8836B\"/></symbol><symbol id=\"ch-jua-read\" viewBox=\"0 0 240 200\"><rect width=\"240\" height=\"200\" fill=\"url(#gMint)\"/>\n        <circle cx=\"200\" cy=\"40\" r=\"13\" fill=\"#BDE3CB\"/>\n        <circle cx=\"36\" cy=\"58\" r=\"9\" fill=\"#BDE3CB\"/>\n        <rect x=\"192\" y=\"128\" width=\"26\" height=\"22\" rx=\"4\" fill=\"#E8956B\"/>\n        <path d=\"M198 128 Q196 112 205 106 Q214 112 212 128 Z\" fill=\"#6FB584\"/>\n        <ellipse cx=\"120\" cy=\"180\" rx=\"38\" ry=\"6\" fill=\"#4A3B2E\" opacity=\"0.1\"/>\n        <path d=\"M100 80 Q92 130 102 170 Q120 176 138 170 Q148 130 140 80 Q132 62 120 62 Q108 62 100 80 Z\" fill=\"url(#gHairG)\"/>\n        <path d=\"M96 178 Q98 118 120 116 Q142 118 144 178 Z\" fill=\"url(#gCard)\"/>\n        <circle cx=\"120\" cy=\"86\" r=\"26\" fill=\"url(#gHairG)\"/>\n        <circle cx=\"120\" cy=\"93\" r=\"21\" fill=\"#FDEDDD\"/>\n        <path d=\"M98 90 Q98 66 120 64 Q142 66 142 90 L136 93 Q136 76 126 73 L128 90 L120 74 L110 91 L109 74 Q104 77 104 93 Z\" fill=\"url(#gHairG)\"/>\n        <path d=\"M104 70 Q112 65 120 65\" stroke=\"#B08256\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.7\"/>\n        <path d=\"M134 70 L137 76 L143 77 L139 81 L140 87 L134 84 L128 87 L129 81 L125 77 L131 76 Z\" fill=\"url(#gGold)\"/>\n        <circle cx=\"111\" cy=\"94\" r=\"4\" fill=\"#4A3B2E\"/><circle cx=\"129\" cy=\"94\" r=\"4\" fill=\"#4A3B2E\"/>\n        <circle cx=\"109.6\" cy=\"92.6\" r=\"1.5\" fill=\"#fff\"/><circle cx=\"127.6\" cy=\"92.6\" r=\"1.5\" fill=\"#fff\"/>\n        <circle cx=\"112.4\" cy=\"96\" r=\"0.9\" fill=\"#fff\"/><circle cx=\"130.4\" cy=\"96\" r=\"0.9\" fill=\"#fff\"/>\n        <line x1=\"106\" y1=\"89\" x2=\"103\" y2=\"87\" stroke=\"#4A3B2E\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n        <line x1=\"134\" y1=\"89\" x2=\"137\" y2=\"87\" stroke=\"#4A3B2E\" stroke-width=\"2\" stroke-linecap=\"round\"/>\n        <ellipse cx=\"103\" cy=\"101\" rx=\"5\" ry=\"3.5\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <ellipse cx=\"137\" cy=\"101\" rx=\"5\" ry=\"3.5\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <path d=\"M113 106 Q120 113 127 106 Q120 109 113 106 Z\" fill=\"#E8836B\"/>\n        <path d=\"M102 128 Q90 136 86 148\" stroke=\"#B4A0E2\" stroke-width=\"10\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M138 128 Q150 136 154 148\" stroke=\"#B4A0E2\" stroke-width=\"10\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M82 136 L118 148 L118 178 L82 166 Z\" fill=\"#fff\"/>\n        <path d=\"M158 136 L122 148 L122 178 L158 166 Z\" fill=\"#FFFDF6\"/>\n        <line x1=\"120\" y1=\"148\" x2=\"120\" y2=\"178\" stroke=\"#E0D4BC\" stroke-width=\"2\"/>\n        <line x1=\"90\" y1=\"148\" x2=\"110\" y2=\"155\" stroke=\"#D9CDB4\" stroke-width=\"2.5\"/>\n        <line x1=\"150\" y1=\"148\" x2=\"130\" y2=\"155\" stroke=\"#D9CDB4\" stroke-width=\"2.5\"/>\n        <circle cx=\"84\" cy=\"138\" r=\"6.5\" fill=\"#FDEDDD\"/>\n        <circle cx=\"156\" cy=\"138\" r=\"6.5\" fill=\"#FDEDDD\"/>\n        <path d=\"M64 92 L66 96 L70 96 L67 99 L68 103 L64 101 L60 103 L61 99 L58 96 L62 96 Z\" fill=\"#FFD65C\"/></symbol><symbol id=\"ch-jua-word\" viewBox=\"0 0 240 200\"><rect width=\"240\" height=\"200\" fill=\"url(#gCream)\"/>\n        <rect x=\"26\" y=\"36\" width=\"62\" height=\"42\" rx=\"9\" fill=\"#fff\"/>\n        <text x=\"36\" y=\"56\" font-size=\"12\" fill=\"#B08A1E\" font-weight=\"bold\">APPLE</text>\n        <text x=\"36\" y=\"70\" font-size=\"10\" fill=\"#C9B27A\">사과</text>\n        <circle cx=\"80\" cy=\"44\" r=\"5\" fill=\"#E8836B\"/>\n        <path d=\"M80 40 Q82 36 85 36\" stroke=\"#6FB584\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <rect x=\"158\" y=\"30\" width=\"56\" height=\"26\" rx=\"9\" fill=\"#5FBFAE\"/>\n        <text x=\"166\" y=\"48\" font-size=\"12\" fill=\"#fff\" font-weight=\"bold\">30개!</text>\n        <path d=\"M104 84 Q98 116 106 140 L120 136 Q112 116 114 92 Z\" fill=\"url(#gHairG)\"/>\n        <path d=\"M148 84 Q154 116 146 140 L132 136 Q140 116 138 92 Z\" fill=\"url(#gHairG)\"/>\n        <path d=\"M106 140 Q108 96 126 94 Q144 96 146 140 Z\" fill=\"url(#gCard)\"/>\n        <path d=\"M112 108 Q100 112 94 122\" stroke=\"#B4A0E2\" stroke-width=\"10\" fill=\"none\" stroke-linecap=\"round\"/>\n        <circle cx=\"92\" cy=\"124\" r=\"6.5\" fill=\"#FDEDDD\"/>\n        <circle cx=\"126\" cy=\"68\" r=\"26\" fill=\"url(#gHairG)\"/>\n        <circle cx=\"126\" cy=\"75\" r=\"21\" fill=\"#FDEDDD\"/>\n        <path d=\"M104 72 Q104 48 126 46 Q148 48 148 72 L142 75 Q142 58 132 55 L134 72 L126 56 L116 73 L115 56 Q110 59 110 75 Z\" fill=\"url(#gHairG)\"/>\n        <path d=\"M110 52 Q118 47 127 47\" stroke=\"#B08256\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.7\"/>\n        <path d=\"M140 52 L143 58 L149 59 L145 63 L146 69 L140 66 L134 69 L135 63 L131 59 L137 58 Z\" fill=\"url(#gGold)\"/>\n        <circle cx=\"117\" cy=\"76\" r=\"4\" fill=\"#4A3B2E\"/><circle cx=\"135\" cy=\"76\" r=\"4\" fill=\"#4A3B2E\"/>\n        <circle cx=\"115.6\" cy=\"74.6\" r=\"1.5\" fill=\"#fff\"/><circle cx=\"133.6\" cy=\"74.6\" r=\"1.5\" fill=\"#fff\"/>\n        <path d=\"M112 68 L120 70 M132 70 L140 68\" stroke=\"#6B452C\" stroke-width=\"2.2\" stroke-linecap=\"round\"/>\n        <ellipse cx=\"109\" cy=\"83\" rx=\"5\" ry=\"3.5\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <ellipse cx=\"143\" cy=\"83\" rx=\"5\" ry=\"3.5\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <path d=\"M120 88 Q126 93 132 88\" stroke=\"#D96A57\" stroke-width=\"2.8\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M150 58 Q155 54 154 48\" stroke=\"#A5D8F0\" stroke-width=\"4\" fill=\"none\" stroke-linecap=\"round\"/>\n        <rect x=\"0\" y=\"134\" width=\"240\" height=\"12\" fill=\"#E2C88E\"/>\n        <rect x=\"0\" y=\"144\" width=\"240\" height=\"56\" fill=\"#F0DCAC\"/>\n        <rect x=\"56\" y=\"152\" width=\"134\" height=\"17\" rx=\"6\" fill=\"#fff\"/>\n        <text x=\"64\" y=\"164\" font-size=\"10\" fill=\"#8A7B6B\">영어단어 테스트 30 / 30 ✓</text></symbol><symbol id=\"ch-jua-dish\" viewBox=\"0 0 240 200\"><rect width=\"240\" height=\"200\" fill=\"url(#gAqua)\"/>\n        <circle cx=\"52\" cy=\"44\" r=\"7\" fill=\"#fff\" stroke=\"#9ADBCE\" stroke-width=\"2\"/>\n        <circle cx=\"74\" cy=\"30\" r=\"5\" fill=\"#fff\" stroke=\"#9ADBCE\" stroke-width=\"2\"/>\n        <circle cx=\"182\" cy=\"40\" r=\"6\" fill=\"#fff\" stroke=\"#9ADBCE\" stroke-width=\"2\"/>\n        <circle cx=\"204\" cy=\"58\" r=\"4\" fill=\"#fff\" stroke=\"#9ADBCE\" stroke-width=\"2\"/>\n        <circle cx=\"66\" cy=\"58\" r=\"3\" fill=\"#FFD65C\"/>\n        <path d=\"M104 80 Q98 110 106 132 L120 128 Q112 110 114 88 Z\" fill=\"url(#gHairG)\"/>\n        <path d=\"M148 80 Q154 110 146 132 L132 128 Q140 110 138 88 Z\" fill=\"url(#gHairG)\"/>\n        <path d=\"M106 152 Q108 100 126 98 Q144 100 146 152 Z\" fill=\"url(#gApron)\"/>\n        <path d=\"M112 106 Q100 112 94 122\" stroke=\"#FFD87A\" stroke-width=\"10\" fill=\"none\" stroke-linecap=\"round\"/>\n        <circle cx=\"86\" cy=\"132\" r=\"15\" fill=\"#fff\" stroke=\"#9ADBCE\" stroke-width=\"3\"/>\n        <circle cx=\"86\" cy=\"132\" r=\"7\" fill=\"#DDF2ED\"/>\n        <circle cx=\"92\" cy=\"126\" r=\"6.5\" fill=\"#FDEDDD\"/>\n        <circle cx=\"126\" cy=\"72\" r=\"26\" fill=\"url(#gHairG)\"/>\n        <circle cx=\"126\" cy=\"79\" r=\"21\" fill=\"#FDEDDD\"/>\n        <path d=\"M104 76 Q104 52 126 50 Q148 52 148 76 L142 79 Q142 62 132 59 L134 76 L126 60 L116 77 L115 60 Q110 63 110 79 Z\" fill=\"url(#gHairG)\"/>\n        <path d=\"M110 56 Q118 51 127 51\" stroke=\"#B08256\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.7\"/>\n        <path d=\"M140 56 L143 62 L149 63 L145 67 L146 73 L140 70 L134 73 L135 67 L131 63 L137 62 Z\" fill=\"url(#gGold)\"/>\n        <circle cx=\"117\" cy=\"80\" r=\"4\" fill=\"#4A3B2E\"/><circle cx=\"135\" cy=\"80\" r=\"4\" fill=\"#4A3B2E\"/>\n        <circle cx=\"115.6\" cy=\"78.6\" r=\"1.5\" fill=\"#fff\"/><circle cx=\"133.6\" cy=\"78.6\" r=\"1.5\" fill=\"#fff\"/>\n        <ellipse cx=\"109\" cy=\"87\" rx=\"5\" ry=\"3.5\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <ellipse cx=\"143\" cy=\"87\" rx=\"5\" ry=\"3.5\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <path d=\"M118 91 Q126 99 134 91 Q126 95 118 91 Z\" fill=\"#E8836B\"/>\n        <path d=\"M160 96 L162 100 L166 100 L163 103 L164 107 L160 105 L156 107 L157 103 L154 100 L158 100 Z\" fill=\"#5FBFAE\"/>\n        <rect x=\"24\" y=\"150\" width=\"192\" height=\"50\" rx=\"10\" fill=\"#5FBFAE\"/>\n        <rect x=\"24\" y=\"150\" width=\"192\" height=\"10\" rx=\"5\" fill=\"#4FAE9D\"/>\n        <rect x=\"150\" y=\"162\" width=\"34\" height=\"8\" rx=\"4\" fill=\"#fff\"/>\n        <rect x=\"150\" y=\"174\" width=\"34\" height=\"8\" rx=\"4\" fill=\"#DDF2ED\"/></symbol><symbol id=\"ch-jua-sleep\" viewBox=\"0 0 240 200\"><rect width=\"240\" height=\"200\" fill=\"url(#gNight)\"/>\n        <path d=\"M52 44 A22 22 0 1 1 66 8 A17 17 0 1 0 52 44 Z\" fill=\"url(#gGold)\"/>\n        <circle cx=\"190\" cy=\"30\" r=\"3\" fill=\"#fff\"/><circle cx=\"150\" cy=\"22\" r=\"2.5\" fill=\"#FFE9B0\"/><circle cx=\"110\" cy=\"40\" r=\"2.5\" fill=\"#fff\"/>\n        <rect x=\"24\" y=\"118\" width=\"192\" height=\"54\" rx=\"14\" fill=\"#EFEBFA\"/>\n        <ellipse cx=\"176\" cy=\"104\" rx=\"28\" ry=\"15\" fill=\"#fff\"/>\n        <path d=\"M150 92 Q140 106 146 120 Q156 124 164 118 Q156 106 158 96 Z\" fill=\"url(#gHairG)\"/>\n        <circle cx=\"176\" cy=\"88\" r=\"23\" fill=\"url(#gHairG)\"/>\n        <circle cx=\"176\" cy=\"93\" r=\"19\" fill=\"#FDEDDD\"/>\n        <path d=\"M157 90 Q159 73 176 71 Q193 73 195 90 L189 93 Q188 80 182 78 L183 91 L176 80 L169 93 L167 79 Q162 82 162 93 Z\" fill=\"url(#gHairG)\"/>\n        <path d=\"M163 77 Q169 72 176 72\" stroke=\"#B08256\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.7\"/>\n        <path d=\"M188 74 L190 79 L195 80 L192 83 L193 88 L188 85 L183 88 L184 83 L181 80 L186 79 Z\" fill=\"url(#gGold)\"/>\n        <path d=\"M167 95 Q171 98 175 95\" stroke=\"#4A3B2E\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M179 95 Q183 98 187 95\" stroke=\"#4A3B2E\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <ellipse cx=\"162\" cy=\"101\" rx=\"4.5\" ry=\"3\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <ellipse cx=\"190\" cy=\"101\" rx=\"4.5\" ry=\"3\" fill=\"#F8BE96\" opacity=\"0.85\"/>\n        <ellipse cx=\"176\" cy=\"106\" rx=\"3\" ry=\"3.8\" fill=\"#E8836B\"/>\n        <path d=\"M24 120 Q80 128 152 118 Q190 112 216 122 L216 150 Q120 158 24 148 Z\" fill=\"url(#gCard)\"/>\n        <path d=\"M150 120 Q176 112 204 120\" stroke=\"#DAD1F2\" stroke-width=\"5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <circle cx=\"44\" cy=\"134\" r=\"7\" fill=\"#FFD65C\" opacity=\"0.9\"/>\n        <text x=\"120\" y=\"76\" font-size=\"17\" fill=\"#fff\" font-weight=\"bold\">Z</text>\n        <text x=\"108\" y=\"62\" font-size=\"13\" fill=\"#FFE9B0\" font-weight=\"bold\">z</text>\n        <text x=\"98\" y=\"52\" font-size=\"10\" fill=\"#fff\" font-weight=\"bold\">z</text>\n        <rect x=\"40\" y=\"70\" width=\"52\" height=\"22\" rx=\"8\" fill=\"#fff\"/>\n        <text x=\"47\" y=\"86\" font-size=\"12\" fill=\"#6F5BB5\" font-weight=\"bold\">11:30</text></symbol><symbol id=\"ch-jua-done\" viewBox=\"0 0 240 200\"><rect width=\"240\" height=\"200\" fill=\"url(#gSunny)\"/>\n        <path d=\"M36 40 L40 50 L50 51 L42 58 L44 68 L36 62 L28 68 L30 58 L22 51 L32 50 Z\" fill=\"#B39FE6\"/>\n        <path d=\"M204 56 L207 64 L215 65 L209 70 L211 78 L204 73 L197 78 L199 70 L193 65 L201 64 Z\" fill=\"#5FBFAE\"/>\n        <circle cx=\"60\" cy=\"120\" r=\"4\" fill=\"#FF9E4D\"/><circle cx=\"196\" cy=\"120\" r=\"4\" fill=\"#6FB584\"/>\n        <circle cx=\"46\" cy=\"86\" r=\"3\" fill=\"#FFD65C\"/><circle cx=\"192\" cy=\"94\" r=\"3\" fill=\"#84B3DE\"/>\n        <rect x=\"26\" y=\"26\" width=\"6\" height=\"12\" rx=\"3\" fill=\"#5FBFAE\" transform=\"rotate(24 29 32)\"/>\n        <rect x=\"206\" y=\"24\" width=\"6\" height=\"12\" rx=\"3\" fill=\"#FF9E4D\" transform=\"rotate(-20 209 30)\"/>\n        <rect x=\"70\" y=\"142\" width=\"6\" height=\"10\" rx=\"3\" fill=\"#84B3DE\" transform=\"rotate(-36 73 147)\"/>\n        <path d=\"M98 134 Q82 118 76 100\" stroke=\"#B4A0E2\" stroke-width=\"11\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M142 134 Q158 118 164 100\" stroke=\"#B4A0E2\" stroke-width=\"11\" fill=\"none\" stroke-linecap=\"round\"/>\n        <circle cx=\"74\" cy=\"96\" r=\"6.5\" fill=\"#FDEDDD\"/>\n        <circle cx=\"166\" cy=\"96\" r=\"6.5\" fill=\"#FDEDDD\"/>\n        <ellipse cx=\"120\" cy=\"176\" rx=\"36\" ry=\"6\" fill=\"#4A3B2E\" opacity=\"0.1\"/>\n        <path d=\"M100 90 Q92 134 102 170 Q120 176 138 170 Q148 134 140 90 Q132 72 120 72 Q108 72 100 90 Z\" fill=\"url(#gHairG)\"/>\n        <path d=\"M96 174 Q98 126 120 124 Q142 126 144 174 Z\" fill=\"url(#gCard)\"/>\n        <path d=\"M104 132 Q120 142 136 132 L136 141 Q120 151 104 141 Z\" fill=\"#FFE08A\"/>\n        <circle cx=\"120\" cy=\"92\" r=\"27\" fill=\"url(#gHairG)\"/>\n        <circle cx=\"120\" cy=\"99\" r=\"22\" fill=\"#FDEDDD\"/>\n        <path d=\"M97 96 Q97 70 120 68 Q143 70 143 96 L137 99 Q137 81 126 78 L128 96 L120 79 L110 97 L109 79 Q103 82 103 99 Z\" fill=\"url(#gHairG)\"/>\n        <path d=\"M103 74 Q112 69 121 69\" stroke=\"#B08256\" stroke-width=\"3\" fill=\"none\" stroke-linecap=\"round\" opacity=\"0.7\"/>\n        <path d=\"M134 74 L137 80 L143 81 L139 85 L140 91 L134 88 L128 91 L129 85 L125 81 L131 80 Z\" fill=\"url(#gGold)\"/>\n        <path d=\"M106 98 Q110 94 114 98\" stroke=\"#4A3B2E\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <path d=\"M126 98 Q130 94 134 98\" stroke=\"#4A3B2E\" stroke-width=\"2.5\" fill=\"none\" stroke-linecap=\"round\"/>\n        <ellipse cx=\"102\" cy=\"106\" rx=\"5.5\" ry=\"4\" fill=\"#F8BE96\" opacity=\"0.9\"/>\n        <ellipse cx=\"138\" cy=\"106\" rx=\"5.5\" ry=\"4\" fill=\"#F8BE96\" opacity=\"0.9\"/>\n        <path d=\"M110 110 Q120 122 130 110 Q120 115 110 110 Z\" fill=\"#E8836B\"/>\n        <ellipse cx=\"120\" cy=\"116\" rx=\"4\" ry=\"2.4\" fill=\"#F5998A\"/>\n        <rect x=\"76\" y=\"154\" width=\"88\" height=\"24\" rx=\"12\" fill=\"url(#gGold)\"/>\n        <text x=\"90\" y=\"171\" font-size=\"12\" fill=\"#7A5210\" font-weight=\"bold\">미션 완료!</text></symbol></svg>";
+  function inject(){
+    if(document.getElementById('char-sprite-root')) return;
+    var wrap=document.createElement('div');
+    wrap.id='char-sprite-root';
+    wrap.style.cssText='position:absolute;width:0;height:0;overflow:hidden';
+    wrap.innerHTML=SPRITE;
+    var host=document.body||document.documentElement;
+    host.insertBefore(wrap, host.firstChild);
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',inject);
+  else inject();
+  window.CHAR_SPRITE=SPRITE;
+})();
+
+</script>
+<script>
+/* ============ 유틸 ============ */
+var WEEK=['일','월','화','수','목','금','토'];
+function pad(n){return String(n).padStart(2,'0')}
+function toKey(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function parseKey(k){var a=k.split('-').map(Number);return new Date(a[0],a[1]-1,a[2])}
+function todayKey(){return toKey(new Date())}
+function labelKo(k){var d=parseKey(k);return (d.getMonth()+1)+'월 '+d.getDate()+'일 ('+WEEK[d.getDay()]+')'}
+function shortLabel(k){var d=parseKey(k);return (d.getMonth()+1)+'.'+d.getDate()}
+function weekdayKo(k){return WEEK[parseKey(k).getDay()]}
+function addDays(k,n){var d=parseKey(k);d.setDate(d.getDate()+n);return toKey(d)}
+function lastNDays(k,n){var o=[];for(var i=n-1;i>=0;i--)o.push(addDays(k,-i));return o}
+function monthGrid(k){var d=parseKey(k),y=d.getFullYear(),m=d.getMonth();var first=new Date(y,m,1);var dim=new Date(y,m+1,0).getDate();var c=[];for(var i=0;i<first.getDay();i++)c.push(null);for(var day=1;day<=dim;day++)c.push(toKey(new Date(y,m,day)));return c}
+/* 한국 캘린더 기준: 해당 날짜가 속한 주의 월요일 반환 */
+function mondayOf(k){var d=parseKey(k);var wd=d.getDay();var diff=(wd===0?-6:1-wd);d.setDate(d.getDate()+diff);return toKey(d)}
+
+var CAT={'신앙':{v:'faith',icon:'🙏'},'독서':{v:'read',icon:'📚'},'학습':{v:'study',icon:'✏️'},'생활':{v:'life',icon:'🏠'}};
+var CAT_ORDER=['신앙','독서','학습','생활'];
+var CYCLES=['매일','주5회','주3회','주1권 목표'];
+var STICKERS=['⭐','👍','❤️','🎉','🔥','🥰','😆','🏆','🍀','💯'];
+var REWARD={'신앙':100,'독서':100,'학습':100,'생활':100}; /* 기본값(구버전 호환) */
+var DEFAULT_COIN=100;
+var CASH_UNIT=10000; /* 10,000코인 = 10,000원 단위로 현금 전환 */
+/* 미션별 코인 (없으면 기본 100) - 모든 코인 계산의 단일 소스 */
+function mCoin(m){return (m&&typeof m.coin==='number')?m.coin:DEFAULT_COIN}
+/* 시작일 기준 n년 후 (종료일 기본값용) */
+function plusYears(dstr,n){var d=parseKey(dstr);d.setFullYear(d.getFullYear()+n);return toKey(d)}
+
+/* 상황별 캐릭터 매핑 (캐릭터.html) */
+var SCENES={juho:['dawn','write','read','math','clean','sleep','done'],jua:['dawn','sing','read','word','dish','sleep','done']};
+var SCENE_LABEL={dawn:'새벽기도',write:'말씀 필사',sing:'찬양 듣기',read:'독서',math:'수학 풀이',word:'영어 단어',clean:'방 청소',dish:'설거지',sleep:'취침',done:'미션 완료'};
+function sceneFor(cid,m){var t=m.title;
+  if(/새벽기도/.test(t))return 'dawn';
+  if(/필사/.test(t))return cid==='juho'?'write':'sing';
+  if(/찬양|기도/.test(t))return cid==='juho'?'write':'sing';
+  if(/책|독서|읽기|페이지/.test(t))return 'read';
+  if(/수학/.test(t))return cid==='juho'?'math':'word';
+  if(/영어|잉글리쉬|단어|독해/.test(t))return cid==='juho'?'math':'word';
+  if(/청소|정리|설거지/.test(t))return cid==='juho'?'clean':'dish';
+  if(/잠|취침/.test(t))return 'sleep';
+  if(m.category==='신앙')return 'dawn';
+  if(m.category==='독서')return 'read';
+  if(m.category==='학습')return cid==='juho'?'math':'word';
+  return cid==='juho'?'clean':'dish';
+}
+function hero(cid,size,cls){return '<svg class="herosvg '+(cls||'')+'" width="'+size+'" height="'+size+'" viewBox="0 0 200 200"><use href="#ch-'+cid+'-hero" width="200" height="200"/></svg>'}
+function scene(cid,sid,size,radius){return '<span class="charcircle" style="width:'+size+'px;height:'+size+'px;border-radius:'+(radius||14)+'px"><svg width="'+size+'" height="'+size+'" viewBox="0 0 240 200" preserveAspectRatio="xMidYMid slice"><use href="#ch-'+cid+'-'+sid+'" width="240" height="200"/></svg></span>'}
+
+/* ============ 시드 ============ */
+var BASE=[
+ ['새벽기도 (주5회) — 3일은 교회에서 기도하기','신앙','주5회'],
+ ['주일말씀 필사하기 1장','신앙','매일'],['성령사연 쓰기','신앙','매일'],
+ ['명지 영성 예배','신앙','매일'],['교회에서 말씀 듣기','신앙','매일'],
+ ['자기 전 기도 또는 찬양 듣기','신앙','매일'],
+ ['선생님 책 50페이지 이상 읽기','독서','주1권 목표'],
+ ['영어 단어 30개 테스트','학습','매일'],['3030 잉글리쉬','학습','매일'],
+ ['영어 독해 2장','학습','매일'],['수학 20문제 이상','학습','매일'],
+ ['국어 문제집 2장 풀기','학습','매일'],['한국사 책 읽기','학습','매일'],
+ ['방 청소·정리하기','생활','매일'],['설거지하기','생활','매일'],['11시 반 잠자기','생활','매일']
+];
+function seededRand(seed){var s=seed%2147483647;if(s<=0)s+=2147483646;return function(){s=(s*16807)%2147483647;return(s-1)/2147483646}}
+function buildSeed(){
+  var missions=[];
+  ['juho','jua'].forEach(function(cid){BASE.forEach(function(m,i){missions.push({id:cid+'-m'+(i+1),childId:cid,title:m[0],category:m[1],cycle:m[2],coin:100,order:i,startDate:'2026-07-07',endDate:plusYears('2026-07-07',1)})})});
+  var records={},today=todayKey();
+  var rand={juho:seededRand(20260707),jua:seededRand(19990101)},dil={juho:.72,jua:.85};
+  for(var back=9;back>=1;back--){(function(date){['juho','jua'].forEach(function(cid){
+    missions.filter(function(m){return m.childId===cid}).forEach(function(m){var r=rand[cid]();var st='none';
+      if(r<dil[cid]){var r2=rand[cid]();st=r2<.88?'approved':r2<.95?'checked':'sent'}
+      if(st!=='none')records[cid+'|'+date+'|'+m.id]={status:st}})})})(addDays(today,-back))}
+  return{version:3,children:[{id:'juho',name:'주호',theme:'juho'},{id:'jua',name:'주아',theme:'jua'}],
+    missions:missions,records:records,
+    messages:[
+      {id:'msg1',childId:'juho',from:'parent',text:'주호야 어제 미션 다 했네! 정말 대견해 👦 오늘도 화이팅!',ts:Date.now()-72e6},
+      {id:'msg2',childId:'jua',from:'parent',text:'주아 최고! 6일 연속 달성 중이야 🔥 엄마가 응원해!',sticker:'⭐',ts:Date.now()-64e6}
+    ],
+    cashRequests:[
+      {id:'cr-s1',childId:'jua',won:10000,coins:10000,status:'approved',ts:Date.now()-86400000*40},
+      {id:'cr-s2',childId:'juho',won:10000,coins:10000,status:'requested',ts:Date.now()-3600000}
+    ],
+    familyRule:'2번 이상 실패 시 → 학교를 열심히 다닌다.',parentPin:'111',pinChanged:false,lastChild:null};
+}
+
+/* ============ 상태 ============ */
+var SKEY='hfm_html_v3';
+var S=load();
+function load(){try{var r=localStorage.getItem(SKEY);if(r){var p=JSON.parse(r);if(p&&p.version===3)return p}}catch(e){}return buildSeed()}
+function persistLocalOnly(){try{localStorage.setItem(SKEY,JSON.stringify(S))}catch(e){}}
+function persist(){persistLocalOnly();if(typeof scheduleCloudPush==='function')scheduleCloudPush()}
+var authed=localStorage.getItem('hfm_html_auth')==='1';
+
+/* 셀렉터 */
+function child(id){return S.children.filter(function(c){return c.id===id})[0]}
+function nameOf(id){var c=child(id);return c?c.name:id}
+function missionsOf(id){return S.missions.filter(function(m){return m.childId===id}).sort(function(a,b){return a.order-b.order})}
+function statusOf(c,d,m){var r=S.records[c+'|'+d+'|'+m];return r?r.status:'none'}
+function commentOf(c,d,m){var r=S.records[c+'|'+d+'|'+m];return r?r.comment:undefined}
+function dayStats(c,d){var ms=missionsOf(c),ch=0,se=0,ap=0;ms.forEach(function(m){var s=statusOf(c,d,m.id);if(s==='checked')ch++;else if(s==='sent')se++;else if(s==='approved')ap++});var t=ms.length;return{total:t,checked:ch,sent:se,approved:ap,done:ch+se+ap,rate:t?Math.round(ap/t*100):0,progress:t?Math.round((ch+se+ap)/t*100):0}}
+function pendingCount(c,d){return missionsOf(c).filter(function(m){return statusOf(c,d,m.id)==='sent'}).length}
+function totalPending(d){return S.children.reduce(function(s,c){return s+pendingCount(c.id,d)},0)}
+function trend(c,d,n){return lastNDays(d,n).map(function(x){return{date:x,rate:dayStats(c,x).rate}})}
+function streak(c,d){var n=0,cur=d;if(dayStats(c,cur).rate<60)cur=addDays(cur,-1);for(var i=0;i<60;i++){if(dayStats(c,cur).rate>=60){n++;cur=addDays(cur,-1)}else break}return n}
+function daysWithPending(c){var set={};Object.keys(S.records).forEach(function(k){var p=k.split('|');if(p[0]===c&&S.records[k].status==='sent')set[p[1]]=1});return Object.keys(set).sort().reverse()}
+function messagesOf(c){return S.messages.filter(function(m){return m.childId===c}).sort(function(a,b){return a.ts-b.ts})}
+function feedbackCount(c){return messagesOf(c).filter(function(m){return m.from==='parent'}).length}
+/* 코인: 미션을 체크(클릭)하는 순간 100코인 적립 (체크/전송/승인 상태 모두 집계) */
+var COUNTED={checked:1,sent:1,approved:1};
+function coinsByCat(cid){var o={'신앙':0,'독서':0,'학습':0,'생활':0};Object.keys(S.records).forEach(function(k){var p=k.split('|');if(p[0]===cid&&COUNTED[S.records[k].status]){var m=S.missions.filter(function(x){return x.id===p[2]})[0];if(m)o[m.category]+=mCoin(m)}});return o}
+function coinsEarned(cid){var o=coinsByCat(cid);return o['신앙']+o['독서']+o['학습']+o['생활']}
+function coinsToday(cid){var d=todayKey(),c=0;missionsOf(cid).forEach(function(m){if(COUNTED[statusOf(cid,d,m.id)])c+=mCoin(m)});return c}
+/* 현금(캐쉬) 전환 */
+function cashReqs(cid){return (S.cashRequests||[]).filter(function(r){return r.childId===cid})}
+function cashApprovedWon(cid){return cashReqs(cid).filter(function(r){return r.status==='approved'}).reduce(function(s,r){return s+r.won},0)}
+function cashPendingWon(cid){return cashReqs(cid).filter(function(r){return r.status==='requested'}).reduce(function(s,r){return s+r.won},0)}
+function cashBalance(cid){return Math.max(0,coinsEarned(cid)-cashApprovedWon(cid))}
+function cashRequestable(cid){return Math.max(0,coinsEarned(cid)-cashApprovedWon(cid)-cashPendingWon(cid))}
+function cashByYear(cid){var o={};cashReqs(cid).filter(function(r){return r.status==='approved'}).forEach(function(r){var y=new Date(r.ts).getFullYear();o[y]=(o[y]||0)+r.won});return o}
+function childCashPending(cid){return cashReqs(cid).filter(function(r){return r.status==='requested'}).length}
+function addCashRequest(cid,won){S.cashRequests=S.cashRequests||[];S.cashRequests.push({id:'cr'+Date.now()+Math.round(Math.random()*999),childId:cid,won:won,coins:won,status:'requested',ts:Date.now()});persist()}
+function approveCashRequest(id){var r=(S.cashRequests||[]).filter(function(x){return x.id===id})[0];if(r)r.status='approved';persist()}
+function childMsgCount(cid){return messagesOf(cid).filter(function(m){return m.from==='child'}).length}
+function totalApproved(cid){return Object.keys(S.records).filter(function(k){var p=k.split('|');return p[0]===cid&&S.records[k].status==='approved'}).length}
+function weekAvg(cid){var t=trend(cid,todayKey(),7);return t.length?Math.round(t.reduce(function(s,x){return s+x.rate},0)/t.length):0}
+function tier(avg){return avg>=80?{n:'골드',c:'#F5B93E',i:'🥇'}:avg>=50?{n:'실버',c:'#AEB6C6',i:'🥈'}:{n:'브론즈',c:'#C58B5A',i:'🥉'}}
+function sceneUnlocked(cid,sid){
+  if(sid==='done')return lastNDays(todayKey(),30).some(function(d){var s=dayStats(cid,d);return s.total>0&&s.rate===100});
+  return Object.keys(S.records).some(function(k){var p=k.split('|');if(p[0]!==cid||S.records[k].status!=='approved')return false;var m=S.missions.filter(function(x){return x.id===p[2]})[0];return m&&sceneFor(cid,m)===sid})
+}
+
+/* 액션 */
+function setStatus(c,d,m,st,cm){var k=c+'|'+d+'|'+m;if(st==='none')delete S.records[k];else S.records[k]={status:st,comment:cm!==undefined?cm:(S.records[k]||{}).comment};persist()}
+function toggleCheck(c,d,m){var k=c+'|'+d+'|'+m,cur=(S.records[k]||{}).status||'none';if(cur==='sent'||cur==='approved')return;if(cur==='checked'||cur==='rejected')delete S.records[k];else S.records[k]={status:'checked'};persist()}
+function sendMissions(c,d){var n=0;missionsOf(c).forEach(function(m){var k=c+'|'+d+'|'+m.id;if((S.records[k]||{}).status==='checked'){S.records[k].status='sent';n++}});persist();return n}
+function approveAll(c,d){missionsOf(c).forEach(function(m){var k=c+'|'+d+'|'+m.id;if((S.records[k]||{}).status==='sent')S.records[k].status='approved'});persist()}
+function sendMessage(c,from,text,sticker){S.messages.push({id:'m'+Date.now()+Math.round(Math.random()*999),childId:c,from:from,text:text,sticker:sticker,ts:Date.now()});persist()}
+function addMission(m){var sib=S.missions.filter(function(x){return x.childId===m.childId});var order=sib.length?Math.max.apply(null,sib.map(function(x){return x.order}))+1:0;m.id=m.childId+'-c'+Date.now();m.order=order;S.missions.push(m);persist()}
+function updateMission(id,p){var m=S.missions.filter(function(x){return x.id===id})[0];if(m)Object.keys(p).forEach(function(k){m[k]=p[k]});persist()}
+function deleteMission(id){S.missions=S.missions.filter(function(m){return m.id!==id});Object.keys(S.records).forEach(function(k){if(k.split('|')[2]===id)delete S.records[k]});persist()}
+function moveMission(id,dir){var t=S.missions.filter(function(m){return m.id===id})[0];if(!t)return;var sib=S.missions.filter(function(m){return m.childId===t.childId}).sort(function(a,b){return a.order-b.order});var i=sib.findIndex(function(m){return m.id===id});var sw=sib[i+dir];if(!sw)return;var a=t.order;t.order=sw.order;sw.order=a;persist()}
+/* #11 드래그로 미션 순서 재배치 */
+function reorderTo(dragId,targetId){var dm=S.missions.filter(function(x){return x.id===dragId})[0];var tm=S.missions.filter(function(x){return x.id===targetId})[0];if(!dm||!tm||dm.childId!==tm.childId||dragId===targetId)return;var ids=S.missions.filter(function(m){return m.childId===dm.childId}).sort(function(a,b){return a.order-b.order}).map(function(m){return m.id});ids.splice(ids.indexOf(dragId),1);ids.splice(ids.indexOf(targetId),0,dragId);ids.forEach(function(id,idx){var m=S.missions.filter(function(x){return x.id===id})[0];if(m)m.order=idx});persist()}
+function resetData(){S=buildSeed();persist()}
+
+/* ============ 렌더 헬퍼 ============ */
+var app=document.getElementById('app');
+function esc(s){return String(s).replace(/[&<>"]/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]})}
+function coin(v){return '<span style="color:var(--coin-deep);font-weight:800">🪙 '+v.toLocaleString()+'</span>'}
+function toast(t){var w=document.getElementById('toasts');var el=document.createElement('div');el.className='toast';el.textContent=t;w.appendChild(el);setTimeout(function(){el.remove()},2400)}
+function go(hash){location.hash=hash}
+function route(){return location.hash.replace(/^#/,'')||'/child'}
+function greet(){var h=new Date().getHours();return h<6?'고요한 새벽이에요':h<12?'좋은 아침이에요':h<18?'즐거운 오후예요':'포근한 저녁이에요'}
+
+/* 폭죽 / 반짝임 */
+function fxParts(build){var cv=document.getElementById('fx');var wrap=cv.parentElement.getBoundingClientRect();cv.width=wrap.width;cv.height=wrap.height;var ctx=cv.getContext('2d');var parts=build(cv);var t=0;(function frame(){ctx.clearRect(0,0,cv.width,cv.height);t++;parts.forEach(function(p){p.step(p)});parts.forEach(function(p){p.draw(ctx,p)});parts=parts.filter(function(p){return p.life>0});if(parts.length&&t<200)requestAnimationFrame(frame);else ctx.clearRect(0,0,cv.width,cv.height)})()}
+function celebrate(){fxParts(function(cv){var cols=['#5C6BE0','#F5B93E','#7D8BF0','#2FB37A','#FF6B6B','#8E7CD1'];var arr=[];[.3,.5,.7].forEach(function(px){for(var i=0;i<40;i++){var a=Math.random()*Math.PI-Math.PI/2;var sp=6+Math.random()*7;arr.push({x:cv.width*px,y:cv.height*.7,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-6,c:cols[i%cols.length],s:5+Math.random()*4,r:Math.random()*6,life:70,step:function(p){p.vy+=.28;p.x+=p.vx;p.y+=p.vy;p.life--;p.r+=.2},draw:function(ctx,p){ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.globalAlpha=Math.max(0,p.life/70);ctx.fillStyle=p.c;ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s*.6);ctx.restore()}})}});return arr})}
+function sparkle(){fxParts(function(cv){var arr=[];for(var i=0;i<22;i++){var a=Math.random()*Math.PI*2;var sp=2+Math.random()*4;arr.push({x:cv.width/2,y:cv.height*.45,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:42,step:function(p){p.x+=p.vx;p.y+=p.vy;p.life--},draw:function(ctx,p){ctx.globalAlpha=Math.max(0,p.life/42);ctx.fillStyle='#F5B93E';ctx.beginPath();ctx.arc(p.x,p.y,3,0,7);ctx.fill()}})}return arr})}
+/* #6 보상 스티커 팝 애니메이션 */
+function stickerBurst(emoji){var wrap=document.querySelector('.screen-wrap');if(!wrap)return;var el=document.createElement('div');el.className='stickerburst';el.textContent=emoji;wrap.appendChild(el);setTimeout(function(){el.remove()},1200)}
+
+/* SVG 도넛 게이지 */
+function donut(pct,size,color,sub){var stroke=15,r=(size-stroke)/2,c=2*Math.PI*r,p=Math.max(0,Math.min(100,pct)),dash=p/100*c;
+  return '<div style="position:relative;width:'+size+'px;height:'+size+'px">'
+   +'<svg width="'+size+'" height="'+size+'" style="transform:rotate(-90deg)">'
+   +'<circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" fill="none" stroke="#f0e5d6" stroke-width="'+stroke+'"/>'
+   +'<circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" fill="none" stroke="'+color+'" stroke-width="'+stroke+'" stroke-linecap="round" stroke-dasharray="'+dash+' '+(c-dash)+'"/></svg>'
+   +'<div style="position:absolute;inset:0;display:grid;place-items:center;text-align:center"><div>'
+   +'<div style="font-family:var(--ft);font-size:'+(size*.26)+'px;color:var(--ink)">'+p+'%</div>'
+   +(sub?'<div style="font-size:11px;color:var(--ink-soft);margin-top:2px">'+sub+'</div>':'')+'</div></div></div>'}
+function trendChart(data,color){var h=120;return '<div><div style="display:flex;align-items:flex-end;gap:6px;height:'+h+'px;padding:4px 2px">'+data.map(function(d){return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px"><div style="font-size:10px;font-weight:800;color:var(--ink-soft)">'+d.rate+'</div><div style="width:66%;max-width:20px;height:'+Math.max(4,d.rate/100*(h-32))+'px;background:'+color+';border-radius:7px"></div><div style="font-size:10px;color:var(--ink-soft)">'+weekdayKo(d.date)+'</div></div>'}).join('')+'</div></div>'}
+
+/* 하단 탭 */
+function navImg(name){return '<img class="navimg" src="navicons/'+name+'.png" alt="">'}
+function childNav(cid,active){var fb=feedbackCount(cid);var items=[['home','홈','child-home',0],['calendar','기록','child-record',0],['quest','도전과제','child-quest',0],['chat','대화','child-chat',fb]];
+  return '<nav class="bottomnav">'+items.map(function(it){return '<button class="'+(active===it[0]?'active':'')+'" data-go="/child/'+cid+'/'+it[0]+'"><span class="ico">'+navImg(it[2])+(it[3]?'<span class="dot" style="position:absolute;top:-6px;right:-12px;transform:scale(.78)">'+it[3]+'</span>':'')+'</span><span>'+it[1]+'</span></button>'}).join('')+'</nav>'}
+function parentNav(cid,active){var pend=totalPending(todayKey());var items=[['dashboard','대시보드','parent-dashboard',0],['approve','승인','parent-approve',pend],['missions','미션관리','parent-missions',0],['chat','대화','parent-chat',childMsgCount(cid)]];
+  var html=items.map(function(it){return '<button class="'+(active===it[0]?'active':'')+'" data-go="/parent/'+cid+'/'+it[0]+'"><span class="ico">'+navImg(it[2])+(it[3]?'<span class="dot" style="position:absolute;top:-6px;right:-12px;transform:scale(.78)">'+it[3]+'</span>':'')+'</span><span>'+it[1]+'</span></button>'}).join('');
+  html+='<button class="'+(active==='settings'?'active':'')+'" data-go="/parent/settings"><span class="ico">'+navImg('parent-settings')+'</span><span>설정</span></button>';
+  return '<nav class="bottomnav">'+html+'</nav>'}
+
+/* ============ 자녀 화면 ============ */
+function scChildSelect(){
+  return '<div class="screen"><div class="body">'
+   +'<div style="padding:26px 18px 8px;text-align:center"><div style="font-family:var(--ft);font-weight:700;font-size:26px;letter-spacing:-0.5px;color:var(--primary-deep)">우리가족 미션 챌린지</div>'
+   +'<div style="color:#5a6180;font-weight:700;margin-top:4px;font-size:13px">주호 · 주아의 하루 미션</div></div>'
+   +'<div class="pad"><div style="font-family:var(--ft);font-size:17px;margin:6px 4px 14px">누구의 미션을 열어볼까요?</div>'
+   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">'
+   +S.children.map(function(c){var col='var(--'+c.theme+')';return '<button class="card pop" data-pick="'+c.id+'" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:20px 12px;border:3px solid '+col+'">'
+     +'<div class="floaty">'+hero(c.id,120)+'</div>'
+     +'<div style="font-family:var(--ft);font-size:21px">'+c.name+'</div>'
+     +'<span class="chip" style="background:'+col+';color:#fff">'+coinsEarned(c.id).toLocaleString()+' 🪙 보유</span></button>'}).join('')
+   +'</div>'
+   +'<div class="card" style="margin-top:18px;display:flex;align-items:center;gap:12px;background:linear-gradient(120deg,#eef1ff,#f6f0ff)">'
+   +'<span style="font-size:26px">✨</span><div style="font-size:13px;font-weight:700;color:#5a6180">매일 미션을 스스로 체크하고<br>부모님 승인을 받아 코인을 모아요!</div></div>'
+   +'</div></div></div>'}
+
+function stcircle(st,mid){
+  if(st==='approved')return '<div class="stcircle pop" style="background:linear-gradient(180deg,#ffce5e,#f5b93e)" title="승인 완료">⭐</div>';
+  if(st==='sent')return '<div class="stcircle" style="background:#fde7c4;box-shadow:0 0 0 2px #f3d59a inset" title="승인 대기중">⭐</div>';
+  if(st==='checked')return '<button data-check="'+mid+'" class="stcircle pop" style="background:#fde7c4;box-shadow:0 0 0 2px #f3d59a inset" title="완료 · 전송 전">⭐</button>';
+  if(st==='rejected')return '<button data-check="'+mid+'" class="stcircle" style="background:#ffe6e6;color:var(--danger);box-shadow:0 0 0 2px #ffc9c9 inset">✖</button>';
+  return '<button data-check="'+mid+'" class="stcircle" style="background:#f6ece0;box-shadow:0 0 0 2px #e8dcc9 inset"></button>'}
+
+function scChildHome(cid){var c=child(cid),col='var(--'+c.theme+')',d=todayKey(),st=dayStats(cid,d),str=streak(cid,d),fb=feedbackCount(cid);
+  var ms=missionsOf(cid);var checked=ms.filter(function(m){return statusOf(cid,d,m.id)==='checked'}).length;
+  var wkBase=addDays(mondayOf(d),attWeekOffset*7);var week=[0,1,2,3,4,5,6].map(function(i){return addDays(wkBase,i)});var WD=['월','화','수','목','금','토','일'];
+  var groups=CAT_ORDER.map(function(cat){return{cat:cat,items:ms.filter(function(m){return m.category===cat})}}).filter(function(g){return g.items.length});
+  return '<div class="screen">'
+   +'<div class="appbar"><button class="iconbtn plain" data-go="/child" style="font-size:22px">‹</button><div class="name">'+c.name+'의 챌린지</div><div class="sp"></div>'
+   +'<button class="coinpill" data-openmodal="coin" style="font-size:12px;padding:5px 9px;gap:3px">🪙 '+coinsEarned(cid).toLocaleString()+' ▾</button>'
+   +bellBtn(cid)
+   +'<button class="iconbtn" data-go="/child/'+cid+'/chat" style="margin-left:6px;width:34px;height:34px;font-size:16px">💬'+(fb?'<span class="dot" style="position:absolute;top:-5px;right:-5px;transform:scale(.72)">'+fb+'</span>':'')+'</button></div>'
+   +'<div class="body"><div class="pad">'
+   +'<div style="display:flex;align-items:center;gap:7px;margin:0 4px 12px"><span style="font-size:16px">📅</span><span style="font-family:var(--ft);font-size:15px">'+parseKey(d).getFullYear()+'년 '+labelKo(d)+'</span><span class="chip" style="margin-left:auto;background:var(--'+c.theme+');color:#fff">오늘</span></div>'
+   /* 히어로 카드 */
+   +'<div class="card" style="background:linear-gradient(145deg,var(--hero1),var(--hero2));color:#fff;position:relative;overflow:hidden;padding:18px 18px 16px">'
+     +'<div style="position:relative;z-index:2;max-width:62%">'
+       +'<div style="font-size:13px;opacity:.92;font-weight:700">'+greet()+', '+c.name+'!</div>'
+       +'<div style="font-family:var(--ft);font-size:22px;margin:6px 0 2px">오늘 미션 '+st.done+'<span style="font-size:15px;opacity:.85"> / '+st.total+'</span></div>'
+       +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">'
+         +'<span class="chip" style="background:rgba(255,255,255,.25);color:#fff">🪙 오늘 '+coinsToday(cid)+'</span>'
+         +(str>0?'<span class="chip" style="background:rgba(255,255,255,.25);color:#fff">🔥 '+str+'일 연속</span>':'')+'</div></div>'
+     +'<div class="floaty" style="position:absolute;right:6px;bottom:-6px;z-index:1;opacity:.98">'+hero(cid,128)+'</div></div>'
+   /* 진행률 */
+   +'<div class="card" style="margin-top:14px;display:flex;align-items:center;gap:16px">'+donut(st.progress,104,col,st.done+'/'+st.total)
+     +'<div style="flex:1"><div style="font-family:var(--ft);font-size:15px;margin-bottom:8px">오늘의 진행률</div>'
+     +'<div class="pbar"><i style="width:'+st.progress+'%"></i></div>'
+     +'<div class="muted" style="font-size:12px;margin-top:8px">체크 '+st.checked+' · 전송 '+st.sent+' · 승인 '+st.approved+' ⭐</div></div></div>'
+   /* 출석 체크 (참조2) */
+   +'<div class="sect">출석 체크 🔥<span class="more">'+str+'일 연속</span></div>'
+   +'<div class="card" style="padding:12px 6px"><div style="display:flex;align-items:center;gap:2px">'
+     +'<button class="iconbtn plain" data-attweek="-1" style="width:22px;height:38px;font-size:18px;flex:0 0 auto" title="지난 주">‹</button>'
+     +'<div style="flex:1;display:flex;justify-content:space-between">'+week.map(function(k,i){var on=dayStats(cid,k).done>0;var isT=k===d;var fut=k>d;var wdcol=isT?'#8e7cd1':(i===6?'#e06060':(i===5?'#4a80c0':'var(--ink-soft)'));
+         var circ=isT?'background:#8e7cd1;color:#fff;box-shadow:0 0 0 3px #e7ddf6':(on?'background:linear-gradient(180deg,#ffce5e,#f5b93e);color:#fff':'background:#f6ece0;color:#cbb99f');
+         var tag=fut?'div':'button';var da=fut?'':' data-attday="'+k+'"';
+         return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1"><div style="font-size:11px;font-weight:800;color:'+wdcol+'">'+WD[i]+'</div><div style="font-size:9.5px;font-weight:'+(isT?800:600)+';color:'+(isT?'#8e7cd1':'var(--ink-soft)')+'">'+(parseKey(k).getMonth()+1)+'/'+parseKey(k).getDate()+'</div><'+tag+da+' style="width:30px;height:30px;border:none;padding:0;border-radius:50%;display:grid;place-items:center;font-size:14px;font-weight:800;'+(fut?'':'cursor:pointer;')+'opacity:'+(fut&&!isT?0.5:1)+';'+circ+'">'+(on?'✓':'')+'</'+tag+'></div>'}).join('')+'</div>'
+     +'<button class="iconbtn plain" data-attweek="1" style="width:22px;height:38px;font-size:18px;flex:0 0 auto" title="다음 주">›</button>'
+   +'</div></div>'
+   /* 오늘의 미션 - 상황별 캐릭터 */
+   +groups.map(function(g){var v=CAT[g.cat].v;return '<div><div class="sect"><span>'+CAT[g.cat].icon+'</span>'+g.cat+'<span class="chip" style="background:var(--'+v+'-bg);color:var(--'+v+')">'+g.items.length+'개</span></div>'
+     +'<div class="card" style="padding:8px">'+g.items.map(function(m){var s=statusOf(cid,d,m.id),cm=commentOf(cid,d,m.id),sid=sceneFor(cid,m);
+       return '<div style="display:flex;align-items:center;gap:11px;padding:8px 6px;border-bottom:1px solid #f4ebde">'
+         +scene(cid,sid,46,13)
+         +'<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:14px;line-height:1.3">'+esc(m.title)+'</div>'
+           +'<div style="display:flex;gap:6px;margin-top:4px;align-items:center;flex-wrap:wrap"><span class="chip" style="font-size:10px;padding:2px 8px">'+m.cycle+'</span><span class="chip" style="font-size:10px;padding:2px 8px;color:var(--coin-deep)">🪙 '+mCoin(m)+'</span>'
+             +(s==='approved'?'<span style="font-size:10.5px;color:var(--ok);font-weight:800">승인 완료 +'+mCoin(m)+'🪙</span>':'')
+             +(s==='sent'?'<span style="font-size:10.5px;color:#c98a1a;font-weight:800">승인 대기중…</span>':'')
+             +(s==='checked'?'<span style="font-size:10.5px;color:#c98a1a;font-weight:800">완료 · 전송 전</span>':'')
+             +(s==='rejected'?'<span style="font-size:10.5px;color:var(--danger);font-weight:800">다시 해보기</span>':'')+'</div>'
+           +(cm?'<div style="font-size:12px;color:#7a5210;background:#fff7e0;padding:5px 8px;border-radius:8px;margin-top:6px">💬 '+esc(cm)+'</div>':'')+'</div>'
+         +stcircle(s,m.id)+'</div>'}).join('')+'<div style="height:2px"></div></div></div>'}).join('')
+   +'<div style="margin-top:18px"><button class="btn coin" data-send="'+cid+'" '+(checked===0?'disabled':'')+'>'+(checked===0?'체크한 미션이 없어요':'미션 완료 전송 ('+checked+'개) 🚀')+'</button></div>'
+   +'<div style="height:6px"></div></div></div>'
+   +'<div style="background:#fff3cd;border-top:1px solid #ffe08a;padding:8px 14px;font-size:12px;font-weight:800;color:#8a6d1a;display:flex;align-items:center;gap:6px">⚠️ 가족 규칙 · '+esc(S.familyRule)+'</div>'
+   +childNav(cid,'home')+'</div>'}
+
+/* 달력 */
+function rateColor(rate,has){if(!has)return'transparent';if(rate>=80)return'var(--ok)';if(rate>=50)return'var(--primary)';if(rate>0)return'#ffcf7a';return'#f0e5d6'}
+var calState={};
+var attWeekOffset=0;
+function scChildCalendar(cid){var c=child(cid),today=todayKey();
+  if(calState.cid!==cid){calState={cid:cid,cursor:today,selected:today}}
+  var cur=calState.cursor,sel=calState.selected;var cells=monthGrid(cur);
+  var monthLabel=parseKey(cur).getFullYear()+'년 '+(parseKey(cur).getMonth()+1)+'월';
+  function has(k){return missionsOf(cid).some(function(m){return statusOf(cid,k,m.id)!=='none'})}
+  var ss=dayStats(cid,sel),ms=missionsOf(cid);
+  return '<div class="screen"><div class="appbar"><button class="iconbtn plain" data-go="/child/'+cid+'/home" style="font-size:22px">‹</button><div class="name">'+c.name+'의 기록</div></div>'
+   +'<div class="body"><div class="pad">'
+   +'<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><button class="iconbtn plain" data-cal="-1">‹</button><div style="font-family:var(--ft);font-size:16px">'+monthLabel+'</div><button class="iconbtn plain" data-cal="1">›</button></div>'
+   +'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center">'
+   +WEEK.map(function(w,i){return '<div style="font-size:11px;font-weight:800;color:'+(i===0?'#e06060':'var(--ink-soft)')+';padding:4px 0">'+w+'</div>'}).join('')
+   +cells.map(function(k){if(!k)return '<div></div>';var h=has(k),rate=h?dayStats(cid,k).rate:0,isT=k===today,isS=k===sel,fut=k>today;
+       return '<button '+(fut?'disabled':'data-day="'+k+'"')+' style="aspect-ratio:1;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:'+(isS?'var(--primary)':'transparent')+';color:'+(isS?'#fff':'var(--ink)')+';border:2px solid '+(isT&&!isS?'var(--primary)':'transparent')+';opacity:'+(fut?.3:1)+';font-weight:700;font-size:13px">'+parseKey(k).getDate()+'<span style="width:7px;height:7px;border-radius:50%;background:'+(isS?'#fff':rateColor(rate,h))+'"></span></button>'}).join('')
+   +'</div></div>'
+   +'<div class="sect">'+labelKo(sel)+' 기록</div>'
+   +'<div class="card" style="display:flex;align-items:center;gap:14px;margin-bottom:12px">'+donut(ss.rate,84,'var(--'+c.theme+')')+'<div class="muted" style="font-size:13px;line-height:1.8"><div>승인 <b style="color:var(--ink)">'+ss.approved+'</b> · 전송 '+ss.sent+' · 체크 '+ss.checked+'</div><div>전체 '+ss.total+'개 중 달성 '+ss.approved+'개</div><div style="color:var(--coin-deep);font-weight:800;margin-top:2px">🪙 '+ (function(){var cc=0;ms.forEach(function(m){if(statusOf(cid,sel,m.id)==='approved')cc+=mCoin(m)});return cc})() +' 획득</div></div></div>'
+   +'<div class="card" style="padding:8px">'+ms.map(function(m){var s=statusOf(cid,sel,m.id),ic=s==='approved'?'⭐':s==='sent'?'📮':s==='checked'?'✅':s==='rejected'?'✖':'⬜';
+       return '<div style="display:flex;align-items:center;gap:10px;padding:8px 6px;border-bottom:1px solid #f4ebde">'+scene(cid,sceneFor(cid,m),34,10)+'<span style="flex:1;font-size:13.5px;color:'+(s==='none'?'var(--ink-soft)':'var(--ink)')+'">'+esc(m.title)+'</span><span style="font-size:18px">'+ic+'</span></div>'}).join('')+'<div style="height:2px"></div></div>'
+   +'<div style="height:6px"></div></div></div>'+childNav(cid,'calendar')+'</div>'}
+
+/* 도전과제 (참조2 벤치마킹) */
+function scChildQuest(cid){var c=child(cid),col='var(--'+c.theme+')',d=todayKey();
+  var str=streak(cid,d),tot=totalApproved(cid),wk=lastNDays(d,7).filter(function(x){return dayStats(cid,x).rate>=80}).length,coins=coinsEarned(cid);
+  var trophies=[
+    {i:'🔥',t:'연속 달성 마스터',cur:str,goal:7,reward:500,desc:'7일 연속 미션 달성하기'},
+    {i:'⭐',t:'미션 수집가',cur:tot,goal:60,reward:1000,desc:'미션 60개 승인받기'},
+    {i:'📅',t:'완벽한 한 주',cur:wk,goal:5,reward:700,desc:'한 주 5일 이상 80% 달성'},
+    {i:'🪙',t:'코인 부자',cur:coins,goal:5000,reward:2000,desc:'코인 5,000개 모으기'}
+  ];
+  var scenes=SCENES[cid];var unlocked=scenes.filter(function(s){return sceneUnlocked(cid,s)}).length;
+  var other=cid==='juho'?'jua':'juho';
+  var mine=weekAvg(cid),theirs=weekAvg(other),myTier=tier(mine);
+  var rank=[{id:cid,v:mine},{id:other,v:theirs}].sort(function(a,b){return b.v-a.v});
+  return '<div class="screen"><div class="appbar"><button class="iconbtn plain" data-go="/child/'+cid+'/home" style="font-size:22px">‹</button><div class="name">도전과제 · 보상</div><div class="sp"></div><button class="coinpill" data-openmodal="coin">🪙 '+coins.toLocaleString()+' ▾</button></div>'
+   +'<div class="body"><div class="pad">'
+   /* 리그 */
+   +'<div class="sect">우리집 리그 '+myTier.i+'<span class="more">이번 주</span></div>'
+   +'<div class="card" style="background:linear-gradient(135deg,#fff,#f3f0ff)"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><div style="width:48px;height:48px;border-radius:14px;background:'+myTier.c+'22;display:grid;place-items:center;font-size:26px">'+myTier.i+'</div><div><div style="font-family:var(--ft);font-size:17px">'+myTier.n+' 리그</div><div class="muted" style="font-size:12px">주간 평균 달성률로 순위가 정해져요</div></div></div>'
+   +rank.map(function(r,i){var rc=child(r.id);var me=r.id===cid;return '<div style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:12px;'+(me?'background:'+col+'18':'')+'"><div style="font-family:var(--ft);width:22px;text-align:center;color:'+(i===0?'var(--coin-deep)':'var(--ink-soft)')+'">'+(i+1)+'</div>'+scene(r.id,'done',34,10)+'<div style="flex:1;font-weight:800;font-size:14px">'+rc.name+(me?' <span class="chip" style="background:'+col+';color:#fff;padding:1px 7px">나</span>':'')+'</div><div style="font-family:var(--ft);color:var(--primary)">'+r.v+'%</div></div>'}).join('')
+   +'</div>'
+   /* 트로피 */
+   +'<div class="sect">트로피 진행</div>'
+   +trophies.map(function(t){var p=Math.min(100,Math.round(t.cur/t.goal*100)),done=t.cur>=t.goal;return '<div class="card" style="margin-bottom:10px;display:flex;gap:12px;align-items:center;'+(done?'background:linear-gradient(120deg,#fff,#fff6e0)':'')+'"><div style="width:44px;height:44px;border-radius:13px;background:'+(done?'#fff2d1':'#f6ece0')+';display:grid;place-items:center;font-size:24px;'+(done?'':'filter:grayscale(.4) opacity(.7)')+'">'+t.i+'</div>'
+     +'<div style="flex:1"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:800;font-size:14px">'+t.t+(done?' ✅':'')+'</div><span class="chip" style="background:var(--faith-bg);color:var(--coin-deep)">🪙 '+t.reward+'</span></div>'
+     +'<div class="muted" style="font-size:11.5px;margin:4px 0 6px">'+t.desc+'</div>'
+     +'<div class="pbar" style="height:9px"><i style="width:'+p+'%;background:'+(done?'linear-gradient(90deg,#ffce5e,#f5b93e)':'linear-gradient(90deg,var(--primary-2),var(--primary))')+'"></i></div>'
+     +'<div style="font-size:10.5px;color:var(--ink-soft);margin-top:3px;text-align:right">'+Math.min(t.cur,t.goal).toLocaleString()+' / '+t.goal.toLocaleString()+'</div></div></div>'}).join('')
+   /* 캐릭터 컬렉션 */
+   +'<div class="sect">'+c.name+'의 순간 컬렉션<span class="more">'+unlocked+' / '+scenes.length+'</span></div>'
+   +'<div class="card"><div class="muted" style="font-size:12px;margin-bottom:10px">미션을 승인받으면 그 순간의 '+c.name+' 일러스트가 열려요 ✨</div>'
+   +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">'+scenes.map(function(s){var un=sceneUnlocked(cid,s);return '<div style="text-align:center"><div style="position:relative">'+scene(cid,s,96,16)+(un?'':'<div style="position:absolute;inset:0;display:grid;place-items:center;font-size:22px" class="locked-ov">🔒</div>')+'</div><div style="font-size:11px;font-weight:700;margin-top:5px;'+(un?'':'color:var(--ink-soft)')+'">'+SCENE_LABEL[s]+'</div></div>'}).map(function(h){return h}).join('')+'</div></div>'
+   +'<div style="height:8px"></div></div></div>'+childNav(cid,'quest')+'</div>'}
+
+/* 대화 */
+function scChildChat(cid){var c=child(cid),msgs=messagesOf(cid);
+  return '<div class="screen"><div class="appbar" style="background:#fff;box-shadow:var(--shadow-sm);padding:12px 14px"><button class="iconbtn plain" data-go="/child/'+cid+'/home" style="font-size:22px">‹</button>'+scene(cid,'done',34,10)+'<div class="name" style="font-size:16px">엄마·아빠와 대화</div></div>'
+   +'<div class="body" id="chatBody" style="background:#efe4d5"><div style="padding:14px;display:flex;flex-direction:column;gap:10px">'
+   +'<div style="text-align:center;font-size:11px;color:#6b7290;margin:4px 0">미션을 완료하면 엄마·아빠가 확인하고 응원해줘요 🎉</div>'
+   +msgs.map(function(m){var mine=m.from==='child';
+     return '<div style="display:flex;flex-direction:'+(mine?'row-reverse':'row')+';gap:8px;align-items:flex-end">'+(!mine?'<div style="font-size:22px">👩‍👧‍👦</div>':'')
+       +'<div style="max-width:72%">'+(!mine?'<div style="font-size:11px;color:#5a6180;margin:0 0 3px 4px">엄마·아빠</div>':'')
+       +((m.sticker&&!m.text)?'<div class="pop" style="font-size:44px;text-align:'+(mine?'right':'left')+'">'+m.sticker+'</div>':'<div class="slideup" style="background:'+(mine?'linear-gradient(180deg,var(--primary-2),var(--primary))':'#fff')+';color:'+(mine?'#fff':'var(--ink)')+';padding:9px 13px;border-radius:16px;border-top-'+(mine?'right':'left')+'-radius:4px;font-size:14px;box-shadow:var(--shadow-sm)">'+esc(m.text||'')+' '+(m.sticker||'')+'</div>')+'</div></div>'}).join('')
+   +'</div></div>'
+   +'<div id="stickerBar" style="display:none;gap:6px;flex-wrap:wrap;padding:10px 12px;background:#fff;border-top:1px solid #f1e6d8">'+STICKERS.map(function(s){return '<button data-sticker="'+s+'" style="font-size:28px;padding:4px">'+s+'</button>'}).join('')+'</div>'
+   +'<div style="display:flex;gap:8px;padding:10px;background:#fff;border-top:1px solid #f1e6d8;align-items:center"><button class="iconbtn" id="stickerToggle">😊</button><input id="chatInput" class="inp" placeholder="메시지 입력…" style="flex:1;border-radius:20px"><button class="btn sm" id="chatSend" style="border-radius:20px" data-child="'+cid+'">전송</button></div>'
+   +childNav(cid,'chat')+'</div>'}
+
+/* ============ 부모 화면 ============ */
+function getPin(){return S.parentPin||'111'}
+function isPinChanged(){return !!S.pinChanged}
+function scLogin(){
+  return '<div class="screen"><div class="body">'
+   +'<div style="padding:44px 22px 20px;text-align:center"><div style="font-size:52px" class="floaty">🔐</div><div style="font-family:var(--ft);font-weight:700;font-size:24px;margin-top:10px">부모(관리자) 로그인</div><div class="muted" style="font-size:13px;margin-top:4px">비밀번호(PIN)를 입력하세요</div></div>'
+   +'<div class="pad"><div class="card" style="display:flex;flex-direction:column;gap:12px">'
+   +'<label style="font-size:12px;font-weight:800;color:var(--ink-soft)">비밀번호(PIN)<input class="inp" id="pinInput" type="password" inputmode="numeric" placeholder="숫자 PIN 입력" style="margin-top:6px;letter-spacing:6px;text-align:center;font-size:18px" autocomplete="off"></label>'
+   +'<button class="btn" data-pinlogin="1">로그인</button></div>'
+   +(isPinChanged()?'':'<div class="card" style="margin-top:14px;background:#fff3cd;color:#8a6d1a;font-size:12.5px;font-weight:700;text-align:center">초기 비밀번호는 <b>111</b> 입니다.<br>최초 로그인 후 비밀번호를 변경해 주세요.</div>')
+   +'<div class="muted" style="font-size:11px;text-align:center;margin-top:16px">* 데모 프로토타입입니다. PIN은 이 기기에 저장됩니다.</div></div></div></div>'}
+function scPinChange(){
+  return '<div class="screen"><div class="body">'
+   +'<div style="padding:44px 22px 20px;text-align:center"><div style="font-size:52px" class="floaty">🔑</div><div style="font-family:var(--ft);font-weight:700;font-size:23px;margin-top:10px">비밀번호 변경</div><div class="muted" style="font-size:13px;margin-top:4px">안전을 위해 새 PIN으로 변경하세요</div></div>'
+   +'<div class="pad"><div class="card" style="display:flex;flex-direction:column;gap:12px">'
+   +'<label style="font-size:12px;font-weight:800;color:var(--ink-soft)">새 비밀번호 (숫자 3자리 이상)<input class="inp" id="pinNew" type="password" inputmode="numeric" placeholder="새 PIN" style="margin-top:6px;letter-spacing:6px;text-align:center;font-size:18px" autocomplete="off"></label>'
+   +'<label style="font-size:12px;font-weight:800;color:var(--ink-soft)">새 비밀번호 확인<input class="inp" id="pinNew2" type="password" inputmode="numeric" placeholder="새 PIN 재입력" style="margin-top:6px;letter-spacing:6px;text-align:center;font-size:18px" autocomplete="off"></label>'
+   +'<button class="btn" data-pinsave="1">변경하고 시작하기</button></div></div></div></div>'}
+
+function scParentSelect(){var d=todayKey();
+  return '<div class="screen"><div class="appbar"><div class="name">관리 대상 선택</div><div class="sp"></div><button class="iconbtn" data-logout="1" title="로그인 화면으로">🔒</button></div>'
+   +'<div class="body"><div class="pad">'
+   +'<div class="sect" style="margin-top:2px">👨‍👩‍👧‍👦 가족 통합 현황<span class="more">'+labelKo(d)+'</span></div>'
+   +'<div class="card" style="display:flex;gap:10px;margin-bottom:6px">'+S.children.map(function(c){var st=dayStats(c.id,d),pend=pendingCount(c.id,d),strk=streak(c.id,d),col='var(--'+c.theme+')';return '<div style="flex:1;text-align:center;background:#fff7ef;border-radius:14px;padding:12px 6px">'+hero(c.id,44)+'<div style="font-family:var(--ft);font-weight:700;font-size:14px;margin-top:2px">'+c.name+'</div><div style="font-family:var(--ft);font-size:22px;color:'+col+';margin-top:4px">'+st.rate+'%</div><div class="muted" style="font-size:10.5px">오늘 달성률</div><div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-top:6px"><span class="chip" style="font-size:9.5px;padding:2px 6px;color:var(--coin-deep)">🪙 '+coinsEarned(c.id).toLocaleString()+'</span>'+(strk>0?'<span class="chip" style="font-size:9.5px;padding:2px 6px;background:#fff0e0;color:#e07a1f">🔥 '+strk+'</span>':'')+(pend>0?'<span class="chip" style="font-size:9.5px;padding:2px 6px;background:#ffe3e3;color:var(--danger)">승인 '+pend+'</span>':'')+'</div></div>'}).join('')+'</div>'
+   +'<div style="font-family:var(--ft);font-size:16px;margin:16px 4px 12px">어느 자녀를 관리할까요?</div><div style="display:flex;flex-direction:column;gap:12px">'
+   +S.children.map(function(c){var pend=pendingCount(c.id,d),st=dayStats(c.id,d),col='var(--'+c.theme+')';
+     return '<button class="card" data-go="/parent/'+c.id+'/dashboard" style="display:flex;align-items:center;gap:12px;text-align:left;border:2.5px solid '+col+';padding:12px">'+hero(c.id,58)+'<div style="flex:1"><div style="font-family:var(--ft);font-size:18px">'+c.name+'</div><div class="muted" style="font-size:12px;margin-top:3px">오늘 달성률 '+st.rate+'% · 승인 '+st.approved+'/'+st.total+'</div></div>'+(pend?'<span class="dot">'+pend+'</span>':'')+'<span style="font-size:22px;color:var(--ink-soft)">›</span></button>'}).join('')
+   +'</div></div></div></div>'}
+
+var dashRange=7;
+function scDashboard(cid){var c=child(cid),col='var(--'+c.theme+')',d=todayKey(),st=dayStats(cid,d),pend=pendingCount(cid,d),str=streak(cid,d);
+  var td=trend(cid,d,dashRange);var avg=td.length?Math.round(td.reduce(function(s,x){return s+x.rate},0)/td.length):0;
+  return '<div class="screen"><div class="appbar"><button class="iconbtn plain" data-go="/parent/select" style="font-size:22px">‹</button>'+scene(cid,'done',34,10)+'<div class="name" style="font-size:16px">'+c.name+' 대시보드</div><div class="sp"></div>'+bellBtn(cid)+'<button class="coinpill" data-openmodal="cash" style="margin-left:6px">💰 '+cashBalance(cid).toLocaleString()+'원'+(childCashPending(cid)?' <span class="dot" style="transform:scale(.75)">'+childCashPending(cid)+'</span>':'')+'</button></div>'
+   +'<div class="body"><div class="pad"><div class="muted" style="font-size:13px;margin:2px 4px 12px">'+labelKo(d)+' 기준</div>'
+   +(pend?'<button class="card slideup" data-go="/parent/'+cid+'/approve" style="display:flex;align-items:center;gap:12px;width:100%;background:#fff3cd;border:1px solid #ffe08a;margin-bottom:14px"><span style="font-size:26px">📮</span><div style="flex:1;text-align:left"><div style="font-family:var(--ft);color:#8a6d1a">승인 대기 '+pend+'건</div><div style="font-size:12px;color:#a5852a">'+c.name+'가 완료 전송한 미션이 있어요</div></div><span class="dot">'+pend+'</span></button>':'')
+   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="card" style="text-align:center;padding:11px 10px"><div style="font-family:var(--ft);font-size:26px;color:var(--ok)">'+st.approved+'</div><div class="muted" style="font-size:11px">오늘 달성(승인)</div></div><div class="card" style="text-align:center;padding:11px 10px"><div style="font-family:var(--ft);font-size:26px;color:var(--danger)">'+(st.total-st.approved)+'</div><div class="muted" style="font-size:11px">미달성</div></div></div>'
+   +'<div class="sect">오늘의 달성률</div>'
+   +'<div class="card" style="display:flex;align-items:center;gap:14px;padding:14px">'+donut(st.rate,110,col,st.approved+'/'+st.total)+'<div style="flex:1"><div style="font-size:12.5px;line-height:1.6;color:var(--ink-soft)"><div>승인 <b style="color:var(--ink)">'+st.approved+'</b></div><div>전송 대기 <b style="color:var(--ink)">'+st.sent+'</b></div><div>체크만 <b style="color:var(--ink)">'+st.checked+'</b></div></div>'+(str>0?'<div class="chip" style="background:#fff0e0;color:#e07a1f;margin-top:6px">🔥 '+str+'일 연속</div>':'')+'</div></div>'
+   +'<div class="muted" style="font-size:11px;margin:6px 4px 0">달성률 = (승인된 미션 ÷ 전체) × 100 · 미체크 항목은 미달성</div>'
+   +'<div class="sect">자녀와 대화</div>'
+   +(function(){var lm=messagesOf(cid);var last=lm[lm.length-1];var prev=last?((last.from==='child'?c.name+': ':'나: ')+(last.text||last.sticker||'')):'대화를 시작해보세요';var unread=childMsgCount(cid);return '<button class="card" data-go="/parent/'+cid+'/chat" style="display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px">'+scene(cid,'done',38,12)+'<div style="flex:1;min-width:0"><div style="font-weight:800;font-size:14px">'+c.name+'와 대화하기</div><div class="muted" style="font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(prev)+'</div></div>'+(unread?'<span class="dot">'+unread+'</span>':'')+'<span style="color:var(--ink-soft);font-size:20px">›</span></button>'})()
+   +'<div class="sect" style="justify-content:space-between"><span>달성률 추이</span><span class="role-toggle" style="background:#f0e5d6;padding:3px;display:inline-flex"><button class="'+(dashRange===7?'active':'')+'" style="font-size:12px;padding:5px 12px" data-range="7">주간</button><button class="'+(dashRange===14?'active':'')+'" style="font-size:12px;padding:5px 12px" data-range="14">2주</button></span></div>'
+   +'<div class="card"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span class="muted" style="font-size:12px">최근 '+dashRange+'일 평균</span><span style="font-family:var(--ft);color:var(--primary)">'+avg+'%</span></div>'+trendChart(td,col)+'</div>'
+   +'<div class="sect">📋 이번 주 리포트</div>'
+   +(function(){var wb=mondayOf(d);var wk=[0,1,2,3,4,5,6].map(function(i){return addDays(wb,i)});var past=wk.filter(function(k){return k<=d});var rates=past.map(function(k){return dayStats(cid,k).rate});var wAvg=rates.length?Math.round(rates.reduce(function(s,x){return s+x},0)/rates.length):0;var best=past.slice().sort(function(a,b){return dayStats(cid,b).rate-dayStats(cid,a).rate})[0];var wApproved=0,wCoin=0;past.forEach(function(k){missionsOf(cid).forEach(function(m){if(statusOf(cid,k,m.id)==='approved'){wApproved++;wCoin+=mCoin(m)}})});var msg=wAvg>=80?'아주 잘하고 있어요! 이대로 쭉 🎉':wAvg>=50?'꾸준히 성장 중이에요 👍':'조금 더 힘내볼까요? 💪';
+     return '<div class="card"><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">'
+       +'<div style="text-align:center;background:#fff7ef;border-radius:12px;padding:10px"><div style="font-family:var(--ft);font-size:22px;color:var(--primary)">'+wAvg+'%</div><div class="muted" style="font-size:11px">주간 평균 달성률</div></div>'
+       +'<div style="text-align:center;background:#fff7ef;border-radius:12px;padding:10px"><div style="font-family:var(--ft);font-size:22px;color:var(--ok)">'+wApproved+'</div><div class="muted" style="font-size:11px">주간 승인 미션</div></div>'
+       +'<div style="text-align:center;background:#fff7ef;border-radius:12px;padding:10px"><div style="font-family:var(--ft);font-size:18px;color:var(--ink)">'+(best?shortLabel(best)+' ('+weekdayKo(best)+')':'-')+'</div><div class="muted" style="font-size:11px">최고의 날 '+(best?dayStats(cid,best).rate+'%':'')+'</div></div>'
+       +'<div style="text-align:center;background:#fff7ef;border-radius:12px;padding:10px"><div style="font-family:var(--ft);font-size:18px;color:var(--coin-deep)">🪙 '+wCoin.toLocaleString()+'</div><div class="muted" style="font-size:11px">주간 획득 코인</div></div>'
+       +'</div><div style="text-align:center;font-weight:700;font-size:13px;color:var(--primary-deep);background:#fff0e8;border-radius:12px;padding:10px">'+nameOf(cid)+' — '+msg+'</div></div>'})()
+   +'<div style="height:8px"></div></div></div>'+parentNav(cid,'dashboard')+'</div>'}
+
+var approveDate=null,commentFor=null;
+function scApprove(cid){var c=child(cid),today=todayKey();var pd=daysWithPending(cid);
+  var dset={};dset[today]=1;pd.forEach(function(x){dset[x]=1});var dates=Object.keys(dset).sort().reverse();
+  if(approveDate===null)approveDate=pd[0]||today;var d=approveDate;
+  var ms=missionsOf(cid);var sent=ms.filter(function(m){return statusOf(cid,d,m.id)==='sent'});var proc=ms.filter(function(m){return ['approved','rejected'].indexOf(statusOf(cid,d,m.id))>-1});
+  return '<div class="screen"><div class="appbar"><button class="iconbtn plain" data-go="/parent/'+cid+'/dashboard" style="font-size:22px">‹</button>'+scene(cid,'done',34,10)+'<div class="name" style="font-size:16px">'+c.name+' 미션 승인</div><div class="sp"></div><button class="coinpill" data-openmodal="cash">💰 '+cashBalance(cid).toLocaleString()+'원</button></div>'
+   +'<div class="body"><div class="pad"><div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px">'+dates.map(function(x){var cnt=ms.filter(function(m){return statusOf(cid,x,m.id)==='sent'}).length;return '<button data-adate="'+x+'" class="chip" style="flex:0 0 auto;padding:8px 12px;font-family:var(--ft);background:'+(x===d?'var(--primary)':'#f0e5d6')+';color:'+(x===d?'#fff':'var(--ink-soft)')+'">'+(x===today?'오늘':shortLabel(x))+(cnt?' <span class="dot" style="transform:scale(.72)">'+cnt+'</span>':'')+'</button>'}).join('')+'</div>'
+   +'<div class="sect" style="justify-content:space-between"><span>'+labelKo(d)+' · 대기 '+sent.length+'건</span>'+(sent.length?'<button class="btn sm" data-approveall="'+cid+'">모두 승인</button>':'')+'</div>'
+   +(sent.length===0?'<div class="card" style="text-align:center;color:var(--ink-soft);padding:28px">🎉 승인 대기중인 미션이 없어요</div>':'')
+   +sent.map(function(m){var v=CAT[m.category].v,open=commentFor===m.id;
+     return '<div class="card slideup" style="margin-bottom:12px"><div style="display:flex;gap:10px;align-items:center">'+scene(cid,sceneFor(cid,m),40,11)+'<div style="flex:1"><div style="display:flex;gap:6px"><span class="chip" style="background:var(--'+v+'-bg);color:var(--'+v+')">'+CAT[m.category].icon+' '+m.category+'</span><span class="chip">🪙 '+mCoin(m)+'</span></div><div style="font-weight:800;font-size:14px;margin-top:6px">'+esc(m.title)+'</div></div></div>'
+       +(open?'<input class="inp" id="cmt-'+m.id+'" placeholder="칭찬/피드백 코멘트 (선택)" style="margin:10px 0">':'')
+       +'<div style="display:flex;gap:8px;margin-top:10px"><button class="btn sm" style="flex:1;background:var(--ok);box-shadow:0 4px 0 #23875a" data-approve="'+m.id+'" data-title="'+esc(m.title)+'">✔ 승인</button><button class="btn sm" style="flex:1;background:#fff;color:var(--danger);box-shadow:0 0 0 2px #ffd0d0 inset" data-reject="'+m.id+'" data-title="'+esc(m.title)+'">✖ 반려</button><button class="iconbtn" data-cmt="'+m.id+'">💬</button></div></div>'}).join('')
+   +(proc.length?'<div class="sect">처리 완료 '+proc.length+'건</div><div class="card" style="padding:8px">'+proc.map(function(m){var s=statusOf(cid,d,m.id);return '<div style="display:flex;align-items:center;gap:10px;padding:8px 6px;border-bottom:1px solid #f4ebde">'+scene(cid,sceneFor(cid,m),32,9)+'<span style="flex:1;font-size:13.5px">'+esc(m.title)+'</span><span class="chip" style="background:'+(s==='approved'?'#e5f7ee':'#ffe3e3')+';color:'+(s==='approved'?'var(--ok)':'var(--danger)')+'">'+(s==='approved'?'승인 ⭐':'반려')+'</span></div>'}).join('')+'<div style="height:2px"></div></div>':'')
+   +'<div style="height:8px"></div></div></div>'+parentNav(cid,'approve')+'</div>'}
+
+var editing=null,form=null;
+function scMissions(cid){var c=child(cid),ms=missionsOf(cid);var sheet='';
+  if(editing){sheet='<div class="sheet-bg" id="sheetBg"><div class="sheet slideup"><div style="font-family:var(--ft);font-size:19px;margin-bottom:14px">'+(editing==='new'?'새 미션 추가':'미션 수정')+'</div>'
+     +'<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:800;color:var(--ink-soft);margin-bottom:6px">미션 제목</div><input class="inp" id="fTitle" value="'+esc(form.title)+'" placeholder="예: 영어 단어 30개 테스트"></div>'
+     +'<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:800;color:var(--ink-soft);margin-bottom:6px">분류</div><div style="display:flex;gap:8px">'+CAT_ORDER.map(function(cat){var v=CAT[cat].v,on=form.category===cat;return '<button data-fcat="'+cat+'" style="flex:1;padding:10px 0;border-radius:12px;background:'+(on?'var(--'+v+'-bg)':'#f7f0e6')+';border:'+(on?'2px solid var(--'+v+')':'2px solid transparent')+';font-weight:800;font-size:13px">'+CAT[cat].icon+' '+cat+'</button>'}).join('')+'</div></div>'
+     +'<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:800;color:var(--ink-soft);margin-bottom:6px">반복 주기</div><div style="display:flex;gap:8px;flex-wrap:wrap">'+CYCLES.map(function(cy){return '<button data-fcycle="'+cy+'" class="chip" style="padding:8px 14px;font-family:var(--ft);background:'+(form.cycle===cy?'var(--primary)':'#f0e5d6')+';color:'+(form.cycle===cy?'#fff':'var(--ink-soft)')+'">'+cy+'</button>'}).join('')+'</div></div>'
+     +'<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:800;color:var(--ink-soft);margin-bottom:6px">획득 코인 (50단위)</div><div style="display:flex;align-items:center;justify-content:center;gap:16px;background:#fff7ef;border:1.5px solid #f1e6d8;border-radius:12px;padding:10px"><button data-coinstep="-50" style="width:36px;height:36px;border-radius:10px;background:#fff;box-shadow:0 0 0 2px #f0e5d6 inset;font-size:20px;color:var(--coin-deep)">－</button><div style="text-align:center;min-width:88px"><div style="font-family:var(--ft);font-weight:700;font-size:22px;color:var(--coin-deep)">🪙 '+form.coin+'</div><div class="muted" style="font-size:10px">미션 1개당</div></div><button data-coinstep="50" style="width:36px;height:36px;border-radius:10px;background:#fff;box-shadow:0 0 0 2px #f0e5d6 inset;font-size:20px;color:var(--coin-deep)">＋</button></div></div>'
+     +'<div style="display:flex;gap:10px"><div style="flex:1"><div style="font-size:12px;font-weight:800;color:var(--ink-soft);margin-bottom:6px">시작일</div><input class="inp" type="date" id="fStart" value="'+form.startDate+'"></div><div style="flex:1"><div style="font-size:12px;font-weight:800;color:var(--ink-soft);margin-bottom:6px">완료일 <span style="font-weight:600;color:#b8a894">(기본 시작+1년)</span></div><input class="inp" type="date" id="fEnd" value="'+form.endDate+'"></div></div>'
+     +'<div style="display:flex;gap:10px;margin-top:16px"><button class="btn ghost" style="flex:1" data-sheetclose="1">취소</button><button class="btn" style="flex:1" data-submit="1">'+(editing==='new'?'추가':'저장')+'</button></div></div></div>'}
+  return '<div class="screen"><div class="appbar"><button class="iconbtn plain" data-go="/parent/'+cid+'/dashboard" style="font-size:22px">‹</button>'+scene(cid,'done',34,10)+'<div class="name" style="font-size:16px">'+c.name+' 미션 관리</div><div class="sp"></div><button class="coinpill" data-openmodal="cash">💰 '+cashBalance(cid).toLocaleString()+'원</button></div>'
+   +'<div class="body"><div class="pad"><div style="display:flex;justify-content:space-between;align-items:center;margin:2px 4px 12px"><span class="muted" style="font-size:13px">총 '+ms.length+'개 · 자녀별 개별 관리</span><button class="btn sm" data-new="'+cid+'">＋ 미션 추가</button></div>'
+   +CAT_ORDER.map(function(cat){var items=ms.filter(function(m){return m.category===cat});if(!items.length)return '';var v=CAT[cat].v;
+     return '<div><div class="sect"><span>'+CAT[cat].icon+'</span>'+cat+'</div><div class="card" style="padding:8px">'+items.map(function(m,i){return '<div draggable="true" data-drag="'+m.id+'" style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #f4ebde;cursor:grab"><div style="display:flex;flex-direction:column"><button data-move="'+m.id+'" data-dir="-1" '+(i===0?'disabled':'')+' style="font-size:12px;opacity:'+(i===0?.25:.7)+';line-height:1">▲</button><button data-move="'+m.id+'" data-dir="1" '+(i===items.length-1?'disabled':'')+' style="font-size:12px;opacity:'+(i===items.length-1?.25:.7)+';line-height:1">▼</button></div>'+scene(cid,sceneFor(cid,m),36,10)+'<div style="flex:1"><div style="font-size:13.5px;font-weight:700">'+esc(m.title)+'</div><div style="display:flex;gap:6px;margin-top:3px"><span class="chip" style="font-size:10px;padding:2px 7px">'+m.cycle+'</span><span class="chip" style="font-size:10px;padding:2px 7px;color:var(--coin-deep)">🪙 '+mCoin(m)+'</span></div></div><button class="iconbtn" style="width:32px;height:32px;font-size:14px" data-edit="'+m.id+'">✏️</button><button class="iconbtn" style="width:32px;height:32px;font-size:14px" data-del="'+m.id+'">🗑️</button></div>'}).join('')+'<div style="height:2px"></div></div></div>'}).join('')
+   +'<div style="height:8px"></div></div></div>'+sheet+parentNav(cid,'missions')+'</div>'}
+
+function scSettings(){
+  return '<div class="screen"><div class="appbar"><button class="iconbtn plain" data-go="/parent/select" style="font-size:22px">‹</button><div class="name">설정</div></div>'
+   +'<div class="body"><div class="pad">'
+   +'<div class="sect">자녀 대표 캐릭터</div>'
+   +S.children.map(function(c){return '<div class="card" style="margin-bottom:12px;display:flex;align-items:center;gap:14px">'+hero(c.id,56)+'<div><div style="font-family:var(--ft);font-size:17px">'+c.name+'</div><div class="muted" style="font-size:12px;margin-top:2px">'+(c.theme==='juho'?'과학소년 · 블루':'노래하는 · 라벤더')+' 테마</div></div></div>'}).join('')
+   +'<div class="sect">가족 규칙</div><div class="card" style="background:#fff3cd;color:#8a6d1a;font-weight:800;font-size:14px">⚠️ '+esc(S.familyRule)+'</div>'
+   +'<div class="sect">클라우드 동기화</div><div class="card" id="cloudStat"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:22px">☁️</span><div style="flex:1"><div style="font-weight:800;font-size:14px">Supabase 동기화 · '+cloudStatus()+'</div><div class="muted" style="font-size:11px;margin-top:2px">기기·부모/자녀 간 실시간 공유 (http/https 접속 시)</div></div></div></div>'
+   +'<div class="sect">데이터</div><div class="card"><button class="btn ghost" data-reset="1">🔄 초기 데이터로 리셋</button><div class="muted" style="font-size:11px;margin-top:8px;text-align:center">기획서 기준 미션 16개와 예시 기록으로 되돌립니다</div></div>'
+   +'<div class="sect">계정</div><div class="card"><button class="btn ghost" data-logout="1">로그아웃</button></div>'
+   +'<div class="muted" style="font-size:11px;text-align:center;margin:18px 0">우리가족 미션 챌린지 · 프로토타입 v2.0<br>👦 주호 · 👧 주아 — 오늘도 미션 화이팅!</div>'
+   +'</div></div>'+parentNav('juho','settings')+'</div>'}
+
+/* 부모 ↔ 자녀 실시간 대화 */
+function scParentChat(cid){var c=child(cid),msgs=messagesOf(cid);
+  return '<div class="screen"><div class="appbar" style="background:#fff;box-shadow:var(--shadow-sm);padding:12px 14px"><button class="iconbtn plain" data-go="/parent/'+cid+'/dashboard" style="font-size:22px">‹</button>'+hero(cid,34)+'<div class="name" style="font-size:16px">'+c.name+'와 대화</div></div>'
+   +'<div class="body" id="chatBody" style="background:#efe4d5"><div style="padding:14px;display:flex;flex-direction:column;gap:10px">'
+   +'<div style="text-align:center;font-size:11px;color:#6b7290;margin:4px 0">'+c.name+'와 실시간으로 대화해요 💬 (자녀 화면과 실시간 연동)</div>'
+   +msgs.map(function(m){var mine=m.from==='parent';
+     return '<div style="display:flex;flex-direction:'+(mine?'row-reverse':'row')+';gap:8px;align-items:flex-end">'+(!mine?'<span style="flex:0 0 auto">'+scene(cid,'done',30,9)+'</span>':'')
+       +'<div style="max-width:72%">'+(!mine?'<div style="font-size:11px;color:#5a6180;margin:0 0 3px 4px">'+c.name+'</div>':'')
+       +((m.sticker&&!m.text)?'<div class="pop" style="font-size:44px;text-align:'+(mine?'right':'left')+'">'+m.sticker+'</div>':'<div class="slideup" style="background:'+(mine?'linear-gradient(180deg,var(--primary-2),var(--primary))':'#fff')+';color:'+(mine?'#fff':'var(--ink)')+';padding:9px 13px;border-radius:16px;border-top-'+(mine?'right':'left')+'-radius:4px;font-size:14px;box-shadow:var(--shadow-sm)">'+esc(m.text||'')+' '+(m.sticker||'')+'</div>')+'</div></div>'}).join('')
+   +'</div></div>'
+   +'<div id="stickerBar" style="display:none;gap:6px;flex-wrap:wrap;padding:10px 12px;background:#fff;border-top:1px solid #f1e6d8">'+STICKERS.map(function(s){return '<button data-sticker="'+s+'" style="font-size:28px;padding:4px">'+s+'</button>'}).join('')+'</div>'
+   +'<div style="display:flex;gap:8px;padding:10px;background:#fff;border-top:1px solid #f1e6d8;align-items:center"><button class="iconbtn" id="stickerToggle">😊</button><input id="chatInput" class="inp" placeholder="'+c.name+'에게 메시지…" style="flex:1;border-radius:20px"><button class="btn sm" id="chatSend" style="border-radius:20px" data-child="'+cid+'">전송</button></div>'
+   +parentNav(cid,'chat')+'</div>'}
+
+/* ============ 코인/캐쉬 모달 ============ */
+var modal=null;
+function openModal(type,cid){modal={type:type,cid:cid,units:1};renderOverlay()}
+function closeModal(){modal=null;renderOverlay()}
+function catCashRows(by){return CAT_ORDER.map(function(cat){var v=CAT[cat].v;return '<div style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #f4ebde"><span class="chip" style="background:var(--'+v+'-bg);color:var(--'+v+')">'+CAT[cat].icon+' '+cat+'</span><div class="sp"></div><b style="color:var(--coin-deep)">🪙 '+by[cat].toLocaleString()+'</b></div>'}).join('')}
+function coinSheet(cid){var c=child(cid);var by=coinsByCat(cid);var bal=cashBalance(cid);var reqable=cashRequestable(cid);var maxU=Math.floor(reqable/CASH_UNIT);var u=Math.min(Math.max(1,modal.units||1),Math.max(1,maxU));modal.units=u;var reqs=cashReqs(cid).slice().sort(function(a,b){return b.ts-a.ts});
+  return '<div class="sheet-bg" id="modalbg"><div class="sheet slideup">'
+   +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="font-size:24px">🪙</span><div style="font-family:var(--ft);font-size:19px">'+c.name+'의 코인</div><div class="sp"></div><button class="iconbtn" data-closemodal="1">✕</button></div>'
+   +'<div class="card" style="background:linear-gradient(135deg,#fff,#fff6e0);margin-bottom:14px"><div class="muted" style="font-size:12px">전체 보유 코인</div><div style="font-family:var(--ft);font-size:30px;color:var(--coin-deep)">🪙 '+bal.toLocaleString()+'</div><div class="muted" style="font-size:11px">10,000코인 = 10,000원으로 전환할 수 있어요</div></div>'
+   +'<div style="font-family:var(--ft);font-size:14px;margin:4px 2px 6px">부문별 획득 코인</div>'+catCashRows(by)
+   +'<div style="display:flex;justify-content:space-between;padding:10px 4px 0;font-weight:800"><span>전체 합계</span><b style="color:var(--coin-deep)">🪙 '+coinsEarned(cid).toLocaleString()+'</b></div>'
+   +'<div style="font-family:var(--ft);font-size:14px;margin:16px 2px 8px">현금 전환 요청</div>'
+   +'<div class="card">'+(maxU<1?'<div class="muted" style="font-size:13px;text-align:center;padding:8px">아직 전환 가능한 금액이 없어요<br>10,000코인부터 전환할 수 있어요</div>':'<div style="display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:10px"><button class="iconbtn" data-unit="-1">－</button><div style="text-align:center"><div style="font-family:var(--ft);font-size:24px">'+(u*CASH_UNIT).toLocaleString()+'원</div><div class="muted" style="font-size:11px">'+u+'만원 · '+(u*CASH_UNIT).toLocaleString()+'코인 차감</div></div><button class="iconbtn" data-unit="1">＋</button></div><div class="muted" style="font-size:11px;text-align:center;margin-bottom:10px">최대 '+maxU+'만원까지 요청 가능</div><button class="btn coin" data-cashreq="'+cid+'">💸 현금전환 요청하기</button>')+'</div>'
+   +(reqs.length?'<div style="font-family:var(--ft);font-size:14px;margin:16px 2px 8px">전환 요청 내역</div>'+reqs.map(function(r){return '<div style="display:flex;align-items:center;gap:8px;padding:9px 4px;border-bottom:1px solid #f4ebde"><span style="font-size:16px">'+(r.status==='approved'?'✅':'⏳')+'</span><div style="flex:1"><div style="font-weight:700;font-size:13px">'+r.won.toLocaleString()+'원 전환</div><div class="muted" style="font-size:10.5px">'+new Date(r.ts).toLocaleDateString('ko-KR')+'</div></div><span class="chip" style="background:'+(r.status==='approved'?'#e5f7ee':'#fff3cd')+';color:'+(r.status==='approved'?'var(--ok)':'#8a6d1a')+'">'+(r.status==='approved'?'승인완료':'승인대기')+'</span></div>'}).join(''):'')
+   +'<button class="btn ghost" data-closemodal="1" style="margin-top:14px">닫기 ✕</button><div style="height:8px"></div></div></div>'}
+function cashSheet(cid){var c=child(cid);var by=coinsByCat(cid);var bal=cashBalance(cid);var reqs=cashReqs(cid).slice().sort(function(a,b){return b.ts-a.ts});var pend=reqs.filter(function(r){return r.status==='requested'});var years=cashByYear(cid);var yk=Object.keys(years).sort().reverse();
+  return '<div class="sheet-bg" id="modalbg"><div class="sheet slideup">'
+   +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="font-size:22px">💰</span><div style="font-family:var(--ft);font-size:19px">'+c.name+' 캐쉬 관리</div><div class="sp"></div><button class="iconbtn" data-closemodal="1">✕</button></div>'
+   +'<div class="card" style="background:linear-gradient(135deg,#fff,#eef7ff);margin-bottom:14px"><div class="muted" style="font-size:12px">현재 보유 캐쉬</div><div style="font-family:var(--ft);font-size:30px;color:var(--primary)">'+bal.toLocaleString()+'원</div><div class="muted" style="font-size:11px">현금전환 승인 시 이 금액에서 차감됩니다</div></div>'
+   +'<div style="font-family:var(--ft);font-size:14px;margin:4px 2px 6px">부문별 획득 캐쉬</div>'+catCashRows(by)
+   +'<div style="display:flex;justify-content:space-between;padding:10px 4px 0;font-weight:800"><span>전체 합계</span><b style="color:var(--primary)">'+coinsEarned(cid).toLocaleString()+'원</b></div>'
+   +'<div style="font-family:var(--ft);font-size:14px;margin:16px 2px 8px">현금전환 승인 대기 '+(pend.length?'<span class="dot">'+pend.length+'</span>':'')+'</div>'
+   +(pend.length?pend.map(function(r){return '<div class="card" style="margin-bottom:10px;display:flex;align-items:center;gap:10px"><span style="font-size:22px">💸</span><div style="flex:1"><div style="font-weight:800">'+r.won.toLocaleString()+'원 전환 요청</div><div class="muted" style="font-size:11px">'+new Date(r.ts).toLocaleDateString('ko-KR')+' 요청</div></div><button class="btn sm" style="background:var(--ok);box-shadow:0 4px 0 #23875a" data-cashapprove="'+r.id+'">승인</button></div>'}).join(''):'<div class="muted" style="font-size:13px;text-align:center;padding:8px">대기중인 요청이 없어요</div>')
+   +'<div style="font-family:var(--ft);font-size:14px;margin:16px 2px 8px">연도별 누적 승인 캐쉬</div>'
+   +'<div class="card">'+(yk.length?yk.map(function(y){return '<div style="display:flex;justify-content:space-between;padding:8px 4px;border-bottom:1px solid #f4ebde"><span style="font-weight:700">'+y+'년</span><b style="color:var(--ok)">'+years[y].toLocaleString()+'원</b></div>'}).join('')+'<div style="display:flex;justify-content:space-between;padding:10px 4px 2px;font-weight:800"><span>누적 합계</span><b style="color:var(--ok)">'+Object.keys(years).reduce(function(s,y){return s+years[y]},0).toLocaleString()+'원</b></div>':'<div class="muted" style="font-size:13px;text-align:center;padding:8px">아직 승인된 현금전환이 없어요</div>')+'</div>'
+   +'<button class="btn ghost" data-closemodal="1" style="margin-top:14px">닫기 ✕</button><div style="height:8px"></div></div></div>'}
+/* #4 인앱 알림 센터 */
+function notiItems(cid){var isP=route().indexOf('/parent')===0;var d=todayKey();var items=[];
+  if(isP){
+    var pend=pendingCount(cid,d);if(pend>0)items.push({i:'📮',t:nameOf(cid)+'가 미션 '+pend+'건 승인을 기다려요',to:'/parent/'+cid+'/approve'});
+    var cash=childCashPending(cid);if(cash>0)items.push({i:'💸',t:'현금전환 요청 '+cash+'건이 대기중이에요',open:'cash'});
+    var cm=childMsgCount(cid);if(cm>0)items.push({i:'💬',t:nameOf(cid)+'의 메시지 '+cm+'건',to:'/parent/'+cid+'/chat'});
+  }else{
+    var st=dayStats(cid,d);var remain=st.total-st.done;if(remain>0)items.push({i:'⏰',t:'오늘 미션 '+remain+'개가 남았어요! 화이팅 🔥',to:'/child/'+cid+'/home'});
+    var rej=missionsOf(cid).filter(function(m){return statusOf(cid,d,m.id)==='rejected'}).length;if(rej>0)items.push({i:'🔁',t:'다시 해볼 미션이 '+rej+'개 있어요',to:'/child/'+cid+'/home'});
+    var fb=feedbackCount(cid);if(fb>0)items.push({i:'💌',t:'엄마·아빠의 응원 메시지 '+fb+'개',to:'/child/'+cid+'/chat'});
+  }
+  return items}
+function notiCount(cid){return notiItems(cid).length}
+function notiSheet(cid){var items=notiItems(cid);
+  return '<div class="sheet-bg" id="modalbg"><div class="sheet slideup">'
+   +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="font-size:22px">🔔</span><div style="font-family:var(--ft);font-weight:700;font-size:19px">알림</div><div class="sp"></div><button class="iconbtn" data-closemodal="1">✕</button></div>'
+   +(items.length?items.map(function(n){var act=n.to?('data-go="'+n.to+'"'):('data-openmodal="'+n.open+'"');return '<button class="card" '+act+' style="display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin-bottom:10px"><span style="font-size:24px">'+n.i+'</span><div style="flex:1;font-weight:700;font-size:14px">'+esc(n.t)+'</div><span style="color:var(--ink-soft);font-size:20px">›</span></button>'}).join(''):'<div class="muted" style="text-align:center;padding:24px 8px">새 알림이 없어요 🎉</div>')
+   +'<button class="btn ghost" data-closemodal="1" style="margin-top:8px">닫기 ✕</button></div></div>'}
+function bellBtn(cid){var n=notiCount(cid);return '<button class="iconbtn" data-openmodal="noti" style="margin-left:6px;width:34px;height:34px;font-size:16px">🔔'+(n?'<span class="dot" style="position:absolute;top:-5px;right:-5px;transform:scale(.72)">'+n+'</span>':'')+'</button>'}
+function renderOverlay(){var ov=document.getElementById('overlay');if(!ov)return;if(!modal){ov.innerHTML='';return}ov.innerHTML=(modal.type==='coin')?coinSheet(modal.cid):(modal.type==='cash')?cashSheet(modal.cid):notiSheet(modal.cid)}
+
+/* ============ 렌더러 ============ */
+var lastRenderRoute=null;
+function render(){var r=route();var parts=r.split('/').filter(Boolean);var html='';
+  var pb=document.querySelector('.body');var prevScroll=pb?pb.scrollTop:0;
+  if(parts[0]==='child'){
+    if(parts.length===1)html=scChildSelect();
+    else{var cid=parts[1],scr=parts[2];html=scr==='calendar'?scChildCalendar(cid):scr==='quest'?scChildQuest(cid):scr==='chat'?scChildChat(cid):scChildHome(cid)}
+  }else if(parts[0]==='parent'){
+    if(parts[1]==='login')html=scLogin();
+    else if(parts[1]==='pinchange')html=scPinChange();
+    else if(!authed){go('/parent/login');return}
+    else if(!parts[1]||parts[1]==='select')html=scParentSelect();
+    else if(parts[1]==='settings')html=scSettings();
+    else if(!child(parts[1])){go('/parent/select');return}
+    else{var pc=parts[1],ps=parts[2];html=ps==='approve'?scApprove(pc):ps==='missions'?scMissions(pc):ps==='chat'?scParentChat(pc):scDashboard(pc)}
+  }else{go('/child');return}
+  var sameScreen=(r===lastRenderRoute);lastRenderRoute=r;
+  app.innerHTML=html;renderRoleToggle();
+  var cb=document.getElementById('chatBody');
+  if(cb){cb.scrollTop=cb.scrollHeight;}
+  else{var nb=document.querySelector('.body');if(nb)nb.scrollTop=sameScreen?prevScroll:0;}
+}
+function renderRoleToggle(){var rt=document.getElementById('roleToggle');var isP=route().indexOf('/parent')===0;rt.innerHTML='<button class="'+(!isP?'active':'')+'" data-role="child"><img class="toggleimg" src="navicons/toggle-child.png" alt="">자녀</button><button class="'+(isP?'active':'')+'" data-role="parent"><img class="toggleimg" src="navicons/toggle-parent.png" alt="">부모</button>'}
+
+/* ============ 이벤트 ============ */
+document.addEventListener('click',function(e){
+  if(e.target.classList&&e.target.classList.contains('sheet-bg')&&e.target.id==='modalbg'){closeModal();return}
+  var sel='[data-go],[data-pick],[data-check],[data-send],[data-role],[data-login],[data-logout],[data-cal],[data-day],[data-range],[data-adate],[data-approve],[data-reject],[data-approveall],[data-cmt],[data-new],[data-edit],[data-del],[data-move],[data-reset],[data-sheetclose],[data-submit],[data-fcat],[data-fcycle],[data-sticker],[data-openmodal],[data-closemodal],[data-unit],[data-cashreq],[data-cashapprove],[data-attweek],[data-coinstep],[data-attday],[data-pinlogin],[data-pinsave]';
+  var t=e.target.closest(sel);if(!t)return;var ds=t.dataset;
+  if(ds.openmodal){openModal(ds.openmodal, route().split('/')[2]);return}
+  if(ds.closemodal){closeModal();return}
+  if(ds.unit){if(modal){modal.units=Math.max(1,(modal.units||1)+Number(ds.unit));renderOverlay()}return}
+  if(ds.cashreq){var uu=modal?modal.units:1;addCashRequest(ds.cashreq,uu*CASH_UNIT);closeModal();toast(uu+'만원 현금전환을 부모님께 요청했어요 💸');render();return}
+  if(ds.cashapprove){approveCashRequest(ds.cashapprove);sparkle();toast('현금전환을 승인했어요. 캐쉬에서 차감됩니다 💰');renderOverlay();render();return}
+  if(ds.go){modal=null;renderOverlay();go(ds.go);return}
+  if(ds.pick){modal=null;renderOverlay();attWeekOffset=0;S.lastChild=ds.pick;persist();go('/child/'+ds.pick+'/home');return}
+  if(ds.role){modal=null;renderOverlay();if(ds.role==='child')go(S.lastChild?'/child/'+S.lastChild+'/home':'/child');else go('/parent');return}
+  if(ds.pinlogin){var pv=(document.getElementById('pinInput')||{}).value||'';if(pv!==getPin()){toast('비밀번호가 올바르지 않아요');return}if(!isPinChanged()){go('/parent/pinchange');return}authed=true;localStorage.setItem('hfm_html_auth','1');go('/parent/select');return}
+  if(ds.pinsave){var np=(document.getElementById('pinNew')||{}).value||'';var np2=(document.getElementById('pinNew2')||{}).value||'';if(!/^[0-9]{3,}$/.test(np)){toast('숫자 3자리 이상으로 입력해주세요');return}if(np!==np2){toast('두 비밀번호가 일치하지 않아요');return}if(np==='111'){toast('초기 비밀번호(111)와 다른 값으로 설정해주세요');return}S.parentPin=np;S.pinChanged=true;persist();authed=true;localStorage.setItem('hfm_html_auth','1');toast('비밀번호를 변경했어요 🔐');go('/parent/select');return}
+  if(ds.logout){modal=null;renderOverlay();authed=false;localStorage.removeItem('hfm_html_auth');go('/parent/login');return}
+  var cid=route().split('/')[2];
+  if(ds.attweek){attWeekOffset+=Number(ds.attweek);render();return}
+  if(ds.attday){calState={cid:cid,cursor:ds.attday,selected:ds.attday};go('/child/'+cid+'/calendar');return}
+  if(ds.check){toggleCheck(cid,todayKey(),ds.check);render();return}
+  if(ds.send){var n=sendMissions(ds.send,todayKey());if(n>0){celebrate();var pr=dayStats(ds.send,todayKey()).progress;stickerBurst(pr>=100?'🏆':STICKERS[n%STICKERS.length]);toast(n+'개 미션을 엄마·아빠에게 전송했어요! 🎉'+(pr>=100?' 오늘 미션 올클리어! 🎉':''))}render();return}
+  if(ds.cal){var dd=parseKey(calState.cursor);dd.setMonth(dd.getMonth()+Number(ds.cal));calState.cursor=toKey(dd);render();return}
+  if(ds.day){calState.selected=ds.day;render();return}
+  if(ds.range){dashRange=Number(ds.range);render();return}
+  if(ds.adate){approveDate=ds.adate;commentFor=null;render();return}
+  if(ds.cmt){commentFor=commentFor===ds.cmt?null:ds.cmt;render();return}
+  if(ds.approve){var inp=document.getElementById('cmt-'+ds.approve);var cm=inp?inp.value.trim():'';setStatus(cid,approveDate,ds.approve,'approved',cm||undefined);sparkle();if(cm)sendMessage(cid,'parent','['+ds.title+'] '+cm,'⭐');commentFor=null;toast('승인 완료! 도장 ⭐이 찍히고 코인이 지급됐어요');render();return}
+  if(ds.reject){var inp2=document.getElementById('cmt-'+ds.reject);var cm2=inp2?inp2.value.trim():'';setStatus(cid,approveDate,ds.reject,'rejected',cm2||'다시 한번 해볼까요?');if(cm2)sendMessage(cid,'parent','['+ds.title+'] '+cm2);commentFor=null;toast('반려했어요. 자녀에게 다시 안내됩니다');render();return}
+  if(ds.approveall){var dd2=approveDate||todayKey();var cnt=missionsOf(ds.approveall).filter(function(m){return statusOf(ds.approveall,dd2,m.id)==='sent'}).length;approveAll(ds.approveall,dd2);sparkle();stickerBurst('🏆');if(cnt){sendMessage(ds.approveall,'parent','오늘 미션 '+cnt+'개 모두 승인했어요! 정말 잘했어 🎉','🏆');toast(cnt+'건 모두 승인 완료! 🎉')}render();return}
+  if(ds.new){editing='new';var t0=todayKey();form={title:'',category:'학습',cycle:'매일',coin:100,startDate:t0,endDate:plusYears(t0,1)};render();return}
+  if(ds.edit){var m=S.missions.filter(function(x){return x.id===ds.edit})[0];editing=ds.edit;form={title:m.title,category:m.category,cycle:m.cycle,coin:mCoin(m),startDate:m.startDate,endDate:m.endDate};render();return}
+  if(ds.del){var md=S.missions.filter(function(x){return x.id===ds.del})[0];if(confirm('"'+md.title+'" 미션을 삭제할까요?')){deleteMission(ds.del);toast('미션을 삭제했어요')}render();return}
+  if(ds.move){moveMission(ds.move,Number(ds.dir));render();return}
+  if(ds.fcat){syncForm();form.category=ds.fcat;render();return}
+  if(ds.fcycle){syncForm();form.cycle=ds.fcycle;render();return}
+  if(ds.coinstep){syncForm();form.coin=Math.max(50,(form.coin||100)+Number(ds.coinstep));render();return}
+  if(ds.sheetclose){editing=null;render();return}
+  if(ds.submit){var ti=document.getElementById('fTitle').value.trim();if(!ti){toast('미션 제목을 입력해주세요');return}form.title=ti;form.startDate=document.getElementById('fStart').value;form.endDate=document.getElementById('fEnd').value;var mcid=route().split('/')[2];var payload={title:form.title,category:form.category,cycle:form.cycle,coin:form.coin,startDate:form.startDate,endDate:form.endDate};if(editing==='new'){addMission({childId:mcid,title:payload.title,category:payload.category,cycle:payload.cycle,coin:payload.coin,startDate:payload.startDate,endDate:payload.endDate});toast('미션을 추가했어요')}else{updateMission(editing,payload);toast('미션을 수정했어요')}editing=null;render();return}
+  if(ds.reset){if(confirm('모든 기록을 초기 상태로 되돌릴까요?')){resetData();toast('초기 데이터로 리셋했어요');go('/parent/select')}render();return}
+  if(ds.sticker){var scid=route().split('/')[2];var sfrom=route().indexOf('/parent')===0?'parent':'child';sendMessage(scid,sfrom,undefined,ds.sticker);render();return}
+});
+function syncForm(){if(!form)return;var t=document.getElementById('fTitle');if(t)form.title=t.value;var s=document.getElementById('fStart');if(s&&s.value)form.startDate=s.value;var e=document.getElementById('fEnd');if(e&&e.value)form.endDate=e.value}
+document.addEventListener('input',function(e){if(e.target.id==='fTitle'&&form)form.title=e.target.value});
+/* 시작일을 바꾸면 완료일 기본값을 시작+1년으로 자동 설정 (이후 관리자가 직접 수정 가능) */
+document.addEventListener('change',function(e){if(e.target.id==='fStart'&&form){var v=e.target.value;if(v){form.startDate=v;form.endDate=plusYears(v,1);var fe=document.getElementById('fEnd');if(fe)fe.value=form.endDate}}});
+document.addEventListener('change',function(e){if(e.target.id==='fEnd'&&form&&e.target.value){form.endDate=e.target.value}});
+function chatFrom(){return route().indexOf('/parent')===0?'parent':'child'}
+document.addEventListener('click',function(e){var b=e.target.closest('#chatSend');if(!b)return;var inp=document.getElementById('chatInput');var v=inp.value.trim();if(!v)return;sendMessage(route().split('/')[2],chatFrom(),v);render()});
+document.addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.id==='chatInput'){var v=e.target.value.trim();if(v){sendMessage(route().split('/')[2],chatFrom(),v);render()}}});
+document.addEventListener('click',function(e){if(e.target.closest('#stickerToggle')){var bar=document.getElementById('stickerBar');if(bar)bar.style.display=bar.style.display==='none'?'flex':'none'}});
+document.addEventListener('click',function(e){if(e.target.id==='sheetBg'){editing=null;render()}});
+/* 다른 탭/기기(같은 브라우저)에서 변경 시 실시간 반영 - 부모·자녀 실시간 대화 */
+window.addEventListener('storage',function(e){if(e.key===SKEY){S=load();render();renderOverlay()}});
+/* #11 데스크톱 드래그로 미션 순서 변경 (모바일은 ▲▼ 사용) */
+document.addEventListener('dragstart',function(e){var row=e.target.closest('[data-drag]');if(row){window._dragId=row.getAttribute('data-drag');try{e.dataTransfer.effectAllowed='move'}catch(x){}}});
+document.addEventListener('dragover',function(e){if(e.target.closest('[data-drag]'))e.preventDefault()});
+document.addEventListener('drop',function(e){var row=e.target.closest('[data-drag]');if(row&&window._dragId){e.preventDefault();var tid=row.getAttribute('data-drag');if(tid!==window._dragId){reorderTo(window._dragId,tid);render()}window._dragId=null}});
+
+window.addEventListener('hashchange',render);
+if(!location.hash)location.hash='/child';
+/* #7 Supabase 클라우드 동기화 (공개키만 사용 / 방어적 - 실패해도 로컬로 동작) */
+var CLOUD={url:'https://qhulwtunogbpzlbhtvcp.supabase.co',key:'sb_publishable_OliwNHYmloBjvSfZTTPg3A_rsRQ8Z9k',rowId:'hong-family',client:null,ready:false,applying:false,pushT:null};
+function cloudStatus(){return CLOUD.ready?'연결됨':(CLOUD.client?'연결 중…':'오프라인(로컬 저장)')}
+function scheduleCloudPush(now){if(!CLOUD.client||CLOUD.applying)return;clearTimeout(CLOUD.pushT);CLOUD.pushT=setTimeout(function(){try{CLOUD.client.from('app_state').upsert({id:CLOUD.rowId,data:S,updated_at:new Date().toISOString()}).then(function(res){if(res&&res.error)console.warn('[cloud push]',res.error.message)})}catch(e){console.warn('[cloud push]',e)}},now?120:800)}
+function cloudApply(data){if(!data)return;CLOUD.applying=true;S=data;persistLocalOnly();render();renderOverlay();CLOUD.applying=false}
+function cloudPull(){if(!CLOUD.client)return;try{CLOUD.client.from('app_state').select('data').eq('id',CLOUD.rowId).maybeSingle().then(function(res){if(res&&res.error){console.warn('[cloud pull]',res.error.message);return}var row=res&&res.data;if(row&&row.data){CLOUD.ready=true;cloudApply(row.data);render()}else{scheduleCloudPush(true)}})}catch(e){console.warn('[cloud pull]',e)}}
+function cloudInit(){if(CLOUD.client||!window.supabase||!CLOUD.url||!CLOUD.key)return;try{CLOUD.client=window.supabase.createClient(CLOUD.url,CLOUD.key);cloudPull();CLOUD.client.channel('hfm-app-state').on('postgres_changes',{event:'*',schema:'public',table:'app_state',filter:'id=eq.'+CLOUD.rowId},function(payload){if(CLOUD.applying)return;var d=payload&&payload.new&&payload.new.data;if(d)cloudApply(d)}).subscribe(function(st){if(st==='SUBSCRIBED')CLOUD.ready=true;if(document.querySelector('#cloudStat'))render()})}catch(e){console.warn('[cloud init]',e)}}
+window.addEventListener('load',cloudInit);
+
+render();renderOverlay();
+/* #9 PWA 서비스워커 (http/https에서만, file://은 미지원이라 건너뜀) */
+if('serviceWorker' in navigator && (location.protocol==='http:'||location.protocol==='https:')){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
+</script>
+</body>
+</html>
