@@ -1,16 +1,22 @@
 {
+  "id": "./prototype.html",
   "name": "우리가족 미션 챌린지",
   "short_name": "가족미션",
   "description": "주호·주아의 하루 미션 - 매일 미션을 체크하고 부모와 소통하는 가족 미션 앱",
   "start_url": "./prototype.html",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "fullscreen", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#fff7ef",
   "theme_color": "#ff7a59",
   "lang": "ko",
+  "dir": "ltr",
+  "categories": ["lifestyle", "education"],
   "icons": [
     { "src": "navicons/appicon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "navicons/appicon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    { "src": "navicons/appicon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "navicons/appicon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "navicons/appicon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

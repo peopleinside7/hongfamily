@@ -8,7 +8,9 @@
 <link rel="manifest" href="manifest.webmanifest" />
 <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="apple-touch-icon" href="navicons/appicon-192.png" />
+<meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="가족미션" />
 <title>우리가족 미션 챌린지 · 주호·주아의 하루 미션</title>
 <style>
@@ -224,8 +226,11 @@ function buildSeed(){
       {id:'cr-s1',childId:'jua',won:10000,coins:10000,status:'approved',ts:Date.now()-86400000*40},
       {id:'cr-s2',childId:'juho',won:10000,coins:10000,status:'requested',ts:Date.now()-3600000}
     ],
-    familyRule:'2번 이상 실패 시 → 학교를 열심히 다닌다.',parentPin:'111',pinChanged:false,lastChild:null};
+    familyRule:'2번 이상 실패 시 → 학교를 열심히 다닌다.',
+    rules:{juho:'2회 이상(월간) 실패 시 → 영어(명지)를 다시 한다.',jua:'2회 이상 실패 시 → 학교를 열심히 다닌다.'},
+    parentPin:'111',pinChanged:false,lastChild:null};
 }
+function ruleOf(cid){return (S.rules&&S.rules[cid])||S.familyRule||''}
 
 /* ============ 상태 ============ */
 var SKEY='hfm_html_v3';
@@ -291,6 +296,7 @@ function resetData(){S=buildSeed();persist()}
 var app=document.getElementById('app');
 function esc(s){return String(s).replace(/[&<>"]/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]})}
 function coin(v){return '<span style="color:var(--coin-deep);font-weight:800">🪙 '+v.toLocaleString()+'</span>'}
+function coinIco(){return '<svg width="15" height="15" viewBox="0 0 24 24" style="vertical-align:-2px;flex:0 0 auto"><circle cx="12" cy="12" r="10" fill="#f5b93e" stroke="#e0a02a" stroke-width="2"/><text x="12" y="16.5" text-anchor="middle" font-size="13" font-weight="800" fill="#7a5210">$</text></svg>'}
 function toast(t){var w=document.getElementById('toasts');var el=document.createElement('div');el.className='toast';el.textContent=t;w.appendChild(el);setTimeout(function(){el.remove()},2400)}
 function go(hash){location.hash=hash}
 function route(){return location.hash.replace(/^#/,'')||'/child'}
@@ -359,7 +365,7 @@ function scChildHome(cid){var c=child(cid),col='var(--'+c.theme+')',d=todayKey()
    +'<div class="body"><div class="pad">'
    +'<div style="display:flex;align-items:center;gap:7px;margin:0 4px 12px"><span style="font-size:16px">📅</span><span style="font-family:var(--ft);font-size:15px">'+parseKey(d).getFullYear()+'년 '+labelKo(d)+'</span><span class="chip" style="margin-left:auto;background:var(--'+c.theme+');color:#fff">오늘</span></div>'
    /* 히어로 카드 */
-   +'<div class="card" style="background:linear-gradient(145deg,var(--hero1),var(--hero2));color:#fff;position:relative;overflow:hidden;padding:18px 18px 16px">'
+   +'<div class="card" style="background:'+(cid==='juho'?'linear-gradient(145deg,#a6d8f7,#6cb5ec)':'linear-gradient(145deg,var(--hero1),var(--hero2))')+';color:#fff;position:relative;overflow:hidden;padding:18px 18px 16px">'
      +'<div style="position:relative;z-index:2;max-width:62%">'
        +'<div style="font-size:13px;opacity:.92;font-weight:700">'+greet()+', '+c.name+'!</div>'
        +'<div style="font-family:var(--ft);font-size:22px;margin:6px 0 2px">오늘 미션 '+st.done+'<span style="font-size:15px;opacity:.85"> / '+st.total+'</span></div>'
@@ -397,7 +403,7 @@ function scChildHome(cid){var c=child(cid),col='var(--'+c.theme+')',d=todayKey()
          +stcircle(s,m.id)+'</div>'}).join('')+'<div style="height:2px"></div></div></div>'}).join('')
    +'<div style="margin-top:18px"><button class="btn coin" data-send="'+cid+'" '+(checked===0?'disabled':'')+'>'+(checked===0?'체크한 미션이 없어요':'미션 완료 전송 ('+checked+'개) 🚀')+'</button></div>'
    +'<div style="height:6px"></div></div></div>'
-   +'<div style="background:#fff3cd;border-top:1px solid #ffe08a;padding:8px 14px;font-size:12px;font-weight:800;color:#8a6d1a;display:flex;align-items:center;gap:6px">⚠️ 가족 규칙 · '+esc(S.familyRule)+'</div>'
+   +'<div style="background:#fff3cd;border-top:1px solid #ffe08a;padding:8px 14px;font-size:12px;font-weight:800;color:#8a6d1a;display:flex;align-items:center;gap:6px">⚠️ 가족 규칙 · '+esc(ruleOf(cid))+'</div>'
    +childNav(cid,'home')+'</div>'}
 
 /* 달력 */
@@ -481,6 +487,8 @@ function scLogin(){
    +'<label style="font-size:12px;font-weight:800;color:var(--ink-soft)">비밀번호(PIN)<input class="inp" id="pinInput" type="password" inputmode="numeric" placeholder="숫자 PIN 입력" style="margin-top:6px;letter-spacing:6px;text-align:center;font-size:18px" autocomplete="off"></label>'
    +'<button class="btn" data-pinlogin="1">로그인</button></div>'
    +(isPinChanged()?'':'<div class="card" style="margin-top:14px;background:#fff3cd;color:#8a6d1a;font-size:12.5px;font-weight:700;text-align:center">초기 비밀번호는 <b>111</b> 입니다.<br>최초 로그인 후 비밀번호를 변경해 주세요.</div>')
+   +'<div class="sect" style="font-size:14px">자녀 페이지 바로가기 <span class="more">관리자</span></div>'
+   +'<div style="display:flex;gap:10px">'+['jua','juho'].map(function(id){var c=child(id);var col='var(--'+c.theme+')';return '<button class="card" data-go="/child/'+id+'/home" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 8px;border:2px solid '+col+'">'+hero(id,52)+'<span style="font-family:var(--ft);font-size:15px">'+c.name+' 페이지</span></button>'}).join('')+'</div>'
    +'<div class="muted" style="font-size:11px;text-align:center;margin-top:16px">* 데모 프로토타입입니다. PIN은 이 기기에 저장됩니다.</div></div></div></div>'}
 function scPinChange(){
   return '<div class="screen"><div class="body">'
@@ -493,17 +501,17 @@ function scPinChange(){
 function scParentSelect(){var d=todayKey();
   return '<div class="screen"><div class="appbar"><div class="name">관리 대상 선택</div><div class="sp"></div><button class="iconbtn" data-logout="1" title="로그인 화면으로">🔒</button></div>'
    +'<div class="body"><div class="pad">'
-   +'<div class="sect" style="margin-top:2px">👨‍👩‍👧‍👦 가족 통합 현황<span class="more">'+labelKo(d)+'</span></div>'
-   +'<div class="card" style="display:flex;gap:10px;margin-bottom:6px">'+S.children.map(function(c){var st=dayStats(c.id,d),pend=pendingCount(c.id,d),strk=streak(c.id,d),col='var(--'+c.theme+')';return '<div style="flex:1;text-align:center;background:#fff7ef;border-radius:14px;padding:12px 6px">'+hero(c.id,44)+'<div style="font-family:var(--ft);font-weight:700;font-size:14px;margin-top:2px">'+c.name+'</div><div style="font-family:var(--ft);font-size:22px;color:'+col+';margin-top:4px">'+st.rate+'%</div><div class="muted" style="font-size:10.5px">오늘 달성률</div><div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;margin-top:6px"><span class="chip" style="font-size:9.5px;padding:2px 6px;color:var(--coin-deep)">🪙 '+coinsEarned(c.id).toLocaleString()+'</span>'+(strk>0?'<span class="chip" style="font-size:9.5px;padding:2px 6px;background:#fff0e0;color:#e07a1f">🔥 '+strk+'</span>':'')+(pend>0?'<span class="chip" style="font-size:9.5px;padding:2px 6px;background:#ffe3e3;color:var(--danger)">승인 '+pend+'</span>':'')+'</div></div>'}).join('')+'</div>'
-   +'<div style="font-family:var(--ft);font-size:16px;margin:16px 4px 12px">어느 자녀를 관리할까요?</div><div style="display:flex;flex-direction:column;gap:12px">'
-   +S.children.map(function(c){var pend=pendingCount(c.id,d),st=dayStats(c.id,d),col='var(--'+c.theme+')';
-     return '<button class="card" data-go="/parent/'+c.id+'/dashboard" style="display:flex;align-items:center;gap:12px;text-align:left;border:2.5px solid '+col+';padding:12px">'+hero(c.id,58)+'<div style="flex:1"><div style="font-family:var(--ft);font-size:18px">'+c.name+'</div><div class="muted" style="font-size:12px;margin-top:3px">오늘 달성률 '+st.rate+'% · 승인 '+st.approved+'/'+st.total+'</div></div>'+(pend?'<span class="dot">'+pend+'</span>':'')+'<span style="font-size:22px;color:var(--ink-soft)">›</span></button>'}).join('')
+   +'<div class="sect" style="margin-top:2px;font-size:13px">👨‍👩‍👧‍👦 가족 통합 현황<span class="more">'+labelKo(d)+'</span></div>'
+   +'<div class="card" style="display:flex;gap:8px;margin-bottom:6px;padding:9px">'+['jua','juho'].map(function(id){var c=child(id);var st=dayStats(id,d),pend=pendingCount(id,d),col='var(--'+c.theme+')';return '<div style="flex:1;text-align:center;background:#fff7ef;border-radius:11px;padding:7px 4px">'+hero(id,30)+'<div style="font-family:var(--ft);font-weight:700;font-size:11.5px;margin-top:1px">'+c.name+'</div><div style="font-family:var(--ft);font-size:15px;color:'+col+';margin-top:1px">'+st.rate+'%</div><div style="display:flex;gap:3px;justify-content:center;flex-wrap:wrap;margin-top:3px"><span class="chip" style="font-size:8.5px;padding:1px 5px;color:var(--coin-deep)">🪙'+coinsEarned(id).toLocaleString()+'</span>'+(pend>0?'<span class="chip" style="font-size:8.5px;padding:1px 5px;background:#ffe3e3;color:var(--danger)">승인'+pend+'</span>':'')+'</div></div>'}).join('')+'</div>'
+   +'<div style="font-family:var(--ft);font-size:16px;margin:18px 4px 12px">어느 자녀를 관리할까요?</div><div style="display:flex;flex-direction:column;gap:14px">'
+   +['jua','juho'].map(function(id){var c=child(id);var pend=pendingCount(id,d),st=dayStats(id,d),col='var(--'+c.theme+')';
+     return '<button class="card" data-go="/parent/'+id+'/dashboard" style="display:flex;align-items:center;gap:16px;text-align:left;border:3px solid '+col+';padding:20px 16px">'+hero(id,76)+'<div style="flex:1"><div style="font-family:var(--ft);font-size:22px">'+c.name+'</div><div class="muted" style="font-size:13px;margin-top:5px">오늘 달성률 '+st.rate+'% · 승인 '+st.approved+'/'+st.total+'</div></div>'+(pend?'<span class="dot">'+pend+'</span>':'')+'<span style="font-size:24px;color:var(--ink-soft)">›</span></button>'}).join('')
    +'</div></div></div></div>'}
 
 var dashRange=7;
 function scDashboard(cid){var c=child(cid),col='var(--'+c.theme+')',d=todayKey(),st=dayStats(cid,d),pend=pendingCount(cid,d),str=streak(cid,d);
   var td=trend(cid,d,dashRange);var avg=td.length?Math.round(td.reduce(function(s,x){return s+x.rate},0)/td.length):0;
-  return '<div class="screen"><div class="appbar"><button class="iconbtn plain" data-go="/parent/select" style="font-size:22px">‹</button>'+scene(cid,'done',34,10)+'<div class="name" style="font-size:16px">'+c.name+' 대시보드</div><div class="sp"></div>'+bellBtn(cid)+'<button class="coinpill" data-openmodal="cash" style="margin-left:6px">💰 '+cashBalance(cid).toLocaleString()+'원'+(childCashPending(cid)?' <span class="dot" style="transform:scale(.75)">'+childCashPending(cid)+'</span>':'')+'</button></div>'
+  return '<div class="screen"><div class="appbar"><button class="iconbtn plain" data-go="/parent/select" style="font-size:22px">‹</button>'+scene(cid,'done',34,10)+'<div class="name" style="font-size:16px">'+c.name+' 대시보드</div><div class="sp"></div>'+bellBtn(cid)+'<button class="coinpill" data-openmodal="cash" style="margin-left:6px;white-space:nowrap;padding:6px 14px;gap:6px">'+coinIco()+' '+cashBalance(cid).toLocaleString()+(childCashPending(cid)?' <span class="dot" style="transform:scale(.75)">'+childCashPending(cid)+'</span>':'')+'</button></div>'
    +'<div class="body"><div class="pad"><div class="muted" style="font-size:13px;margin:2px 4px 12px">'+labelKo(d)+' 기준</div>'
    +(pend?'<button class="card slideup" data-go="/parent/'+cid+'/approve" style="display:flex;align-items:center;gap:12px;width:100%;background:#fff3cd;border:1px solid #ffe08a;margin-bottom:14px"><span style="font-size:26px">📮</span><div style="flex:1;text-align:left"><div style="font-family:var(--ft);color:#8a6d1a">승인 대기 '+pend+'건</div><div style="font-size:12px;color:#a5852a">'+c.name+'가 완료 전송한 미션이 있어요</div></div><span class="dot">'+pend+'</span></button>':'')
    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><div class="card" style="text-align:center;padding:11px 10px"><div style="font-family:var(--ft);font-size:26px;color:var(--ok)">'+st.approved+'</div><div class="muted" style="font-size:11px">오늘 달성(승인)</div></div><div class="card" style="text-align:center;padding:11px 10px"><div style="font-family:var(--ft);font-size:26px;color:var(--danger)">'+(st.total-st.approved)+'</div><div class="muted" style="font-size:11px">미달성</div></div></div>'
@@ -529,7 +537,7 @@ function scApprove(cid){var c=child(cid),today=todayKey();var pd=daysWithPending
   var dset={};dset[today]=1;pd.forEach(function(x){dset[x]=1});var dates=Object.keys(dset).sort().reverse();
   if(approveDate===null)approveDate=pd[0]||today;var d=approveDate;
   var ms=missionsOf(cid);var sent=ms.filter(function(m){return statusOf(cid,d,m.id)==='sent'});var proc=ms.filter(function(m){return ['approved','rejected'].indexOf(statusOf(cid,d,m.id))>-1});
-  return '<div class="screen"><div class="appbar"><button class="iconbtn plain" data-go="/parent/'+cid+'/dashboard" style="font-size:22px">‹</button>'+scene(cid,'done',34,10)+'<div class="name" style="font-size:16px">'+c.name+' 미션 승인</div><div class="sp"></div><button class="coinpill" data-openmodal="cash">💰 '+cashBalance(cid).toLocaleString()+'원</button></div>'
+  return '<div class="screen"><div class="appbar"><button class="iconbtn plain" data-go="/parent/'+cid+'/dashboard" style="font-size:22px">‹</button>'+scene(cid,'done',34,10)+'<div class="name" style="font-size:16px">'+c.name+' 미션 승인</div><div class="sp"></div><button class="coinpill" data-openmodal="cash" style="white-space:nowrap;padding:6px 14px;gap:6px">'+coinIco()+' '+cashBalance(cid).toLocaleString()+'</button></div>'
    +'<div class="body"><div class="pad"><div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:6px">'+dates.map(function(x){var cnt=ms.filter(function(m){return statusOf(cid,x,m.id)==='sent'}).length;return '<button data-adate="'+x+'" class="chip" style="flex:0 0 auto;padding:8px 12px;font-family:var(--ft);background:'+(x===d?'var(--primary)':'#f0e5d6')+';color:'+(x===d?'#fff':'var(--ink-soft)')+'">'+(x===today?'오늘':shortLabel(x))+(cnt?' <span class="dot" style="transform:scale(.72)">'+cnt+'</span>':'')+'</button>'}).join('')+'</div>'
    +'<div class="sect" style="justify-content:space-between"><span>'+labelKo(d)+' · 대기 '+sent.length+'건</span>'+(sent.length?'<button class="btn sm" data-approveall="'+cid+'">모두 승인</button>':'')+'</div>'
    +(sent.length===0?'<div class="card" style="text-align:center;color:var(--ink-soft);padding:28px">🎉 승인 대기중인 미션이 없어요</div>':'')
@@ -549,7 +557,7 @@ function scMissions(cid){var c=child(cid),ms=missionsOf(cid);var sheet='';
      +'<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:800;color:var(--ink-soft);margin-bottom:6px">획득 코인 (50단위)</div><div style="display:flex;align-items:center;justify-content:center;gap:16px;background:#fff7ef;border:1.5px solid #f1e6d8;border-radius:12px;padding:10px"><button data-coinstep="-50" style="width:36px;height:36px;border-radius:10px;background:#fff;box-shadow:0 0 0 2px #f0e5d6 inset;font-size:20px;color:var(--coin-deep)">－</button><div style="text-align:center;min-width:88px"><div style="font-family:var(--ft);font-weight:700;font-size:22px;color:var(--coin-deep)">🪙 '+form.coin+'</div><div class="muted" style="font-size:10px">미션 1개당</div></div><button data-coinstep="50" style="width:36px;height:36px;border-radius:10px;background:#fff;box-shadow:0 0 0 2px #f0e5d6 inset;font-size:20px;color:var(--coin-deep)">＋</button></div></div>'
      +'<div style="display:flex;gap:10px"><div style="flex:1"><div style="font-size:12px;font-weight:800;color:var(--ink-soft);margin-bottom:6px">시작일</div><input class="inp" type="date" id="fStart" value="'+form.startDate+'"></div><div style="flex:1"><div style="font-size:12px;font-weight:800;color:var(--ink-soft);margin-bottom:6px">완료일 <span style="font-weight:600;color:#b8a894">(기본 시작+1년)</span></div><input class="inp" type="date" id="fEnd" value="'+form.endDate+'"></div></div>'
      +'<div style="display:flex;gap:10px;margin-top:16px"><button class="btn ghost" style="flex:1" data-sheetclose="1">취소</button><button class="btn" style="flex:1" data-submit="1">'+(editing==='new'?'추가':'저장')+'</button></div></div></div>'}
-  return '<div class="screen"><div class="appbar"><button class="iconbtn plain" data-go="/parent/'+cid+'/dashboard" style="font-size:22px">‹</button>'+scene(cid,'done',34,10)+'<div class="name" style="font-size:16px">'+c.name+' 미션 관리</div><div class="sp"></div><button class="coinpill" data-openmodal="cash">💰 '+cashBalance(cid).toLocaleString()+'원</button></div>'
+  return '<div class="screen"><div class="appbar"><button class="iconbtn plain" data-go="/parent/'+cid+'/dashboard" style="font-size:22px">‹</button>'+scene(cid,'done',34,10)+'<div class="name" style="font-size:16px">'+c.name+' 미션 관리</div><div class="sp"></div><button class="coinpill" data-openmodal="cash" style="white-space:nowrap;padding:6px 14px;gap:6px">'+coinIco()+' '+cashBalance(cid).toLocaleString()+'</button></div>'
    +'<div class="body"><div class="pad"><div style="display:flex;justify-content:space-between;align-items:center;margin:2px 4px 12px"><span class="muted" style="font-size:13px">총 '+ms.length+'개 · 자녀별 개별 관리</span><button class="btn sm" data-new="'+cid+'">＋ 미션 추가</button></div>'
    +CAT_ORDER.map(function(cat){var items=ms.filter(function(m){return m.category===cat});if(!items.length)return '';var v=CAT[cat].v;
      return '<div><div class="sect"><span>'+CAT[cat].icon+'</span>'+cat+'</div><div class="card" style="padding:8px">'+items.map(function(m,i){return '<div draggable="true" data-drag="'+m.id+'" style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #f4ebde;cursor:grab"><div style="display:flex;flex-direction:column"><button data-move="'+m.id+'" data-dir="-1" '+(i===0?'disabled':'')+' style="font-size:12px;opacity:'+(i===0?.25:.7)+';line-height:1">▲</button><button data-move="'+m.id+'" data-dir="1" '+(i===items.length-1?'disabled':'')+' style="font-size:12px;opacity:'+(i===items.length-1?.25:.7)+';line-height:1">▼</button></div>'+scene(cid,sceneFor(cid,m),36,10)+'<div style="flex:1"><div style="font-size:13.5px;font-weight:700">'+esc(m.title)+'</div><div style="display:flex;gap:6px;margin-top:3px"><span class="chip" style="font-size:10px;padding:2px 7px">'+m.cycle+'</span><span class="chip" style="font-size:10px;padding:2px 7px;color:var(--coin-deep)">🪙 '+mCoin(m)+'</span></div></div><button class="iconbtn" style="width:32px;height:32px;font-size:14px" data-edit="'+m.id+'">✏️</button><button class="iconbtn" style="width:32px;height:32px;font-size:14px" data-del="'+m.id+'">🗑️</button></div>'}).join('')+'<div style="height:2px"></div></div></div>'}).join('')
@@ -560,7 +568,9 @@ function scSettings(){
    +'<div class="body"><div class="pad">'
    +'<div class="sect">자녀 대표 캐릭터</div>'
    +S.children.map(function(c){return '<div class="card" style="margin-bottom:12px;display:flex;align-items:center;gap:14px">'+hero(c.id,56)+'<div><div style="font-family:var(--ft);font-size:17px">'+c.name+'</div><div class="muted" style="font-size:12px;margin-top:2px">'+(c.theme==='juho'?'과학소년 · 블루':'노래하는 · 라벤더')+' 테마</div></div></div>'}).join('')
-   +'<div class="sect">가족 규칙</div><div class="card" style="background:#fff3cd;color:#8a6d1a;font-weight:800;font-size:14px">⚠️ '+esc(S.familyRule)+'</div>'
+   +'<div class="sect">가족 규칙 (자녀별)</div><div class="card">'
+   +['jua','juho'].map(function(id){var c=child(id);return '<div style="margin-bottom:10px"><div style="font-size:12px;font-weight:800;color:var(--ink-soft);margin-bottom:6px;display:flex;align-items:center;gap:6px">'+hero(id,24)+c.name+' 규칙</div><textarea class="inp" id="rule-'+id+'" rows="2" style="resize:none">'+esc(ruleOf(id))+'</textarea></div>'}).join('')
+   +'<button class="btn" data-saverules="1">규칙 저장</button><div class="muted" style="font-size:11px;margin-top:8px;text-align:center">저장하면 각 자녀 홈 화면 하단에 표시됩니다</div></div>'
    +'<div class="sect">가족 동기화 · 보안</div><div class="card" id="cloudStat"><div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span style="font-size:22px">🔒</span><div style="flex:1"><div style="font-weight:800;font-size:14px">'+cloudStatus()+'</div><div class="muted" style="font-size:11px;margin-top:2px">가족 코드로 암호화해 기기 간 실시간 공유</div></div></div><button class="btn ghost" data-openmodal="sync">🔒 가족 동기화 코드 설정</button></div>'
    +'<div class="sect">데이터</div><div class="card"><button class="btn ghost" data-reset="1">🔄 초기 데이터로 리셋</button><div class="muted" style="font-size:11px;margin-top:8px;text-align:center">기획서 기준 미션 16개와 예시 기록으로 되돌립니다</div></div>'
    +'<div class="sect">계정</div><div class="card"><button class="btn ghost" data-logout="1">로그아웃</button></div>'
@@ -663,7 +673,7 @@ function renderRoleToggle(){var rt=document.getElementById('roleToggle');var isP
 /* ============ 이벤트 ============ */
 document.addEventListener('click',function(e){
   if(e.target.classList&&e.target.classList.contains('sheet-bg')&&e.target.id==='modalbg'){closeModal();return}
-  var sel='[data-go],[data-pick],[data-check],[data-send],[data-role],[data-login],[data-logout],[data-cal],[data-day],[data-range],[data-adate],[data-approve],[data-reject],[data-approveall],[data-cmt],[data-new],[data-edit],[data-del],[data-move],[data-reset],[data-sheetclose],[data-submit],[data-fcat],[data-fcycle],[data-sticker],[data-openmodal],[data-closemodal],[data-unit],[data-cashreq],[data-cashapprove],[data-attweek],[data-coinstep],[data-attday],[data-pinlogin],[data-pinsave],[data-synccode]';
+  var sel='[data-go],[data-pick],[data-check],[data-send],[data-role],[data-login],[data-logout],[data-cal],[data-day],[data-range],[data-adate],[data-approve],[data-reject],[data-approveall],[data-cmt],[data-new],[data-edit],[data-del],[data-move],[data-reset],[data-sheetclose],[data-submit],[data-fcat],[data-fcycle],[data-sticker],[data-openmodal],[data-closemodal],[data-unit],[data-cashreq],[data-cashapprove],[data-attweek],[data-coinstep],[data-attday],[data-pinlogin],[data-pinsave],[data-synccode],[data-saverules]';
   var t=e.target.closest(sel);if(!t)return;var ds=t.dataset;
   if(ds.openmodal){openModal(ds.openmodal, route().split('/')[2]);return}
   if(ds.closemodal){closeModal();return}
@@ -699,6 +709,7 @@ document.addEventListener('click',function(e){
   if(ds.coinstep){syncForm();form.coin=Math.max(50,(form.coin||100)+Number(ds.coinstep));render();return}
   if(ds.sheetclose){editing=null;render();return}
   if(ds.submit){var ti=document.getElementById('fTitle').value.trim();if(!ti){toast('미션 제목을 입력해주세요');return}form.title=ti;form.startDate=document.getElementById('fStart').value;form.endDate=document.getElementById('fEnd').value;var mcid=route().split('/')[2];var payload={title:form.title,category:form.category,cycle:form.cycle,coin:form.coin,startDate:form.startDate,endDate:form.endDate};if(editing==='new'){addMission({childId:mcid,title:payload.title,category:payload.category,cycle:payload.cycle,coin:payload.coin,startDate:payload.startDate,endDate:payload.endDate});toast('미션을 추가했어요')}else{updateMission(editing,payload);toast('미션을 수정했어요')}editing=null;render();return}
+  if(ds.saverules){var rj=(document.getElementById('rule-jua')||{}).value;var rh=(document.getElementById('rule-juho')||{}).value;S.rules=S.rules||{};if(rj!==undefined)S.rules.jua=rj.trim();if(rh!==undefined)S.rules.juho=rh.trim();persist();toast('가족 규칙을 저장했어요');render();return}
   if(ds.reset){if(confirm('모든 기록을 초기 상태로 되돌릴까요?')){resetData();toast('초기 데이터로 리셋했어요');go('/parent/select')}render();return}
   if(ds.sticker){var scid=route().split('/')[2];var sfrom=route().indexOf('/parent')===0?'parent':'child';sendMessage(scid,sfrom,undefined,ds.sticker);render();return}
 });
