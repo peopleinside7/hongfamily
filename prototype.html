@@ -397,6 +397,13 @@ function scChildHome(cid){var c=child(cid),col='var(--'+c.theme+')',d=todayKey()
 function rateColor(rate,has){if(!has)return'transparent';if(rate>=80)return'var(--ok)';if(rate>=50)return'var(--primary)';if(rate>0)return'#ffcf7a';return'#f0e5d6'}
 var calState={};
 var attWeekOffset=0;
+/* 달력(지난날) 체크 버튼 - 홈의 stcircle과 동일 디자인, 선택 날짜 대상 */
+function calCircle(s,mid){
+  if(s==='approved')return '<div class="stcircle" style="background:linear-gradient(180deg,#ffce5e,#f5b93e)" title="승인 완료">⭐</div>';
+  if(s==='sent')return '<div class="stcircle" style="background:#fde7c4;box-shadow:0 0 0 2px #f3d59a inset" title="승인 대기중">⭐</div>';
+  if(s==='checked')return '<button data-calcheck="'+mid+'" class="stcircle pop" style="background:#fde7c4;box-shadow:0 0 0 2px #f3d59a inset" title="완료 · 전송 전">⭐</button>';
+  if(s==='rejected')return '<button data-calcheck="'+mid+'" class="stcircle" style="background:#ffe6e6;color:var(--danger);box-shadow:0 0 0 2px #ffc9c9 inset">✖</button>';
+  return '<button data-calcheck="'+mid+'" class="stcircle" style="background:#f6ece0;box-shadow:0 0 0 2px #e8dcc9 inset"></button>'}
 function scChildCalendar(cid){var c=child(cid),today=todayKey();
   if(calState.cid!==cid){calState={cid:cid,cursor:today,selected:today}}
   var cur=calState.cursor,sel=calState.selected;var cells=monthGrid(cur);
@@ -413,8 +420,9 @@ function scChildCalendar(cid){var c=child(cid),today=todayKey();
    +'</div></div>'
    +'<div class="sect">'+labelKo(sel)+' 기록</div>'
    +'<div class="card" style="display:flex;align-items:center;gap:14px;margin-bottom:12px">'+donut(ss.rate,84,'var(--'+c.theme+')')+'<div class="muted" style="font-size:13px;line-height:1.8"><div>승인 <b style="color:var(--ink)">'+ss.approved+'</b> · 전송 '+ss.sent+' · 체크 '+ss.checked+'</div><div>전체 '+ss.total+'개 중 달성 '+ss.approved+'개</div><div style="color:var(--coin-deep);font-weight:800;margin-top:2px">🪙 '+ (function(){var cc=0;ms.forEach(function(m){if(statusOf(cid,sel,m.id)==='approved')cc+=mCoin(m)});return cc})() +' 획득</div></div></div>'
-   +'<div class="card" style="padding:8px">'+ms.map(function(m){var s=statusOf(cid,sel,m.id),ic=s==='approved'?'⭐':s==='sent'?'📮':s==='checked'?'✅':s==='rejected'?'✖':'⬜';
-       return '<div style="display:flex;align-items:center;gap:10px;padding:8px 6px;border-bottom:1px solid #f4ebde">'+scene(cid,sceneFor(cid,m),34,10)+'<span style="flex:1;font-size:13.5px;color:'+(s==='none'?'var(--ink-soft)':'var(--ink)')+'">'+esc(m.title)+'</span><span style="font-size:18px">'+ic+'</span></div>'}).join('')+'<div style="height:2px"></div></div>'
+   +'<div class="card" style="padding:8px">'+ms.map(function(m){var s=statusOf(cid,sel,m.id);
+       return '<div style="display:flex;align-items:center;gap:10px;padding:8px 6px;border-bottom:1px solid #f4ebde">'+scene(cid,sceneFor(cid,m),34,10)+'<span style="flex:1;font-size:13.5px;color:'+(s==='none'?'var(--ink-soft)':'var(--ink)')+'">'+esc(m.title)+'</span>'+calCircle(s,m.id)+'</div>'}).join('')+'<div style="height:2px"></div></div>'
+   +(function(){var chk=ms.filter(function(m){return statusOf(cid,sel,m.id)==='checked'}).length;return '<div style="margin-top:14px"><button class="btn coin" data-calsend="'+cid+'" '+(chk===0?'disabled':'')+'>'+(chk===0?'체크한 미션이 없어요':(shortLabel(sel)+' 미션 완료 전송 ('+chk+'개) 🚀'))+'</button></div>'})()
    +'<div style="height:6px"></div></div></div>'+childNav(cid,'calendar')+'</div>'}
 
 /* 도전과제 (참조2 벤치마킹) */
@@ -660,7 +668,7 @@ function renderRoleToggle(){var rt=document.getElementById('roleToggle');var isP
 /* ============ 이벤트 ============ */
 document.addEventListener('click',function(e){
   if(e.target.classList&&e.target.classList.contains('sheet-bg')&&e.target.id==='modalbg'){closeModal();return}
-  var sel='[data-go],[data-pick],[data-check],[data-send],[data-role],[data-login],[data-logout],[data-cal],[data-day],[data-range],[data-adate],[data-approve],[data-reject],[data-approveall],[data-cmt],[data-new],[data-edit],[data-del],[data-move],[data-reset],[data-sheetclose],[data-submit],[data-fcat],[data-fcycle],[data-sticker],[data-openmodal],[data-closemodal],[data-unit],[data-cashreq],[data-cashapprove],[data-attweek],[data-coinstep],[data-attday],[data-pinlogin],[data-pinsave],[data-synccode],[data-saverules]';
+  var sel='[data-go],[data-pick],[data-check],[data-send],[data-role],[data-login],[data-logout],[data-cal],[data-day],[data-range],[data-adate],[data-approve],[data-reject],[data-approveall],[data-cmt],[data-new],[data-edit],[data-del],[data-move],[data-reset],[data-sheetclose],[data-submit],[data-fcat],[data-fcycle],[data-sticker],[data-openmodal],[data-closemodal],[data-unit],[data-cashreq],[data-cashapprove],[data-attweek],[data-coinstep],[data-attday],[data-pinlogin],[data-pinsave],[data-synccode],[data-saverules],[data-calcheck],[data-calsend]';
   var t=e.target.closest(sel);if(!t)return;var ds=t.dataset;
   if(ds.openmodal){openModal(ds.openmodal, route().split('/')[2]);return}
   if(ds.closemodal){closeModal();return}
@@ -678,6 +686,8 @@ document.addEventListener('click',function(e){
   if(ds.attweek){attWeekOffset+=Number(ds.attweek);render();return}
   if(ds.attday){calState={cid:cid,cursor:ds.attday,selected:ds.attday};go('/child/'+cid+'/calendar');return}
   if(ds.check){toggleCheck(cid,todayKey(),ds.check);render();return}
+  if(ds.calcheck){var cd=calState.selected;if(cd&&cd<=todayKey()){toggleCheck(cid,cd,ds.calcheck);render()}return}
+  if(ds.calsend){var csd=calState.selected;if(csd&&csd<=todayKey()){var cn=sendMissions(ds.calsend,csd);if(cn>0){celebrate();toast(labelKo(csd)+' 미션 '+cn+'개를 전송했어요! 🎉')}render()}return}
   if(ds.send){var n=sendMissions(ds.send,todayKey());if(n>0){celebrate();var pr=dayStats(ds.send,todayKey()).progress;stickerBurst(pr>=100?'🏆':STICKERS[n%STICKERS.length]);toast(n+'개 미션을 엄마·아빠에게 전송했어요! 🎉'+(pr>=100?' 오늘 미션 올클리어! 🎉':''))}render();return}
   if(ds.cal){var dd=parseKey(calState.cursor);dd.setMonth(dd.getMonth()+Number(ds.cal));calState.cursor=toKey(dd);render();return}
   if(ds.day){calState.selected=ds.day;render();return}
