@@ -1,5 +1,5 @@
 /* 우리가족 미션 챌린지 - 서비스워커 (오프라인 캐시) */
-var CACHE = 'hfm-cache-v5';
+var CACHE = 'hfm-cache-v6';
 var ASSETS = [
   './prototype.html',
   './manifest.webmanifest',
